@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import { PriorityBadge, PlatformBadge } from '@/components/ui/Badge';
+
 import EmptyState from '@/components/ui/EmptyState';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Button from '@/components/ui/Button';
-import { formatDate, TASK_TYPES } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import { ContentTypeBadge } from '@/components/ui/Badge';
 import type { ITask, IClient } from '@/types';
 import { Star, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -40,20 +42,18 @@ export default function AvailableTasksContent() {
           <div className="space-y-3">
             {tasks.map(task => {
               const client = task.clientId as IClient;
-              const type = TASK_TYPES.find(t => t.value === task.taskType)?.label ?? task.taskType;
               return (
                 <div key={task._id} className="rounded-xl border p-4 hover:border-yellow-500/30 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{task.title}</h3>
+                        <ContentTypeBadge type={task.contentType} />
                         <PriorityBadge priority={task.priority} />
                       </div>
                       <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                         <span>{client?.name}</span>
-                        <span>·</span>
-                        <span>{type}</span>
-                        {task.deadline && <><span>·</span><span>Due {formatDate(task.deadline)}</span></>}
+                        {task.scheduledDate && <><span>·</span><span>Scheduled {formatDate(task.scheduledDate)}</span></>}
                       </div>
                       {task.description && <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{task.description}</p>}
                       {(task.platforms ?? []).length > 0 && (

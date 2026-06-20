@@ -20,6 +20,7 @@ export interface IClientDoc extends Document {
   brandColors?: string[];
   logoUrl?: string;
   driveFolderUrl?: string;
+  isDemo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +46,7 @@ const ClientSchema = new Schema<IClientDoc>(
     brandColors: [{ type: String }],
     logoUrl: { type: String },
     driveFolderUrl: { type: String },
+    isDemo: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

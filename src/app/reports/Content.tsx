@@ -1,178 +1,131 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
-import { ConfirmModal } from '@/components/ui/Modal';
-import { Input, Select, Textarea } from '@/components/ui/Input';
-import EmptyState from '@/components/ui/EmptyState';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatDate } from '@/lib/utils';
-import type { IReport, IClient, IContentItem } from '@/types';
-import { Plus, BarChart3, Eye, Heart, MessageSquare, Share2, Bookmark, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import EmptyState from '@/components/ui/EmptyState';
+import { BarChart3, Building2, ChevronRight, CheckCircle2, AlertTriangle, FileText, Layers } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-const emptyForm = { clientId: '', contentItemId: '', reportDate: new Date().toISOString().split('T')[0], daysAfterPosting: '3', views: '', reach: '', likes: '', comments: '', shares: '', saves: '', clicks: '', engagementRate: '', notes: '', screenshotUrl: '' };
+interface ClientSummary {
+  _id: string;
+  name: string;
+  status: string;
+  businessType?: string;
+  totalBoards: number;
+  totalPosted: number;
+  completedInsights: number;
+  missingInsights: number;
+  progress: number;
+}
 
 export default function ReportsContent() {
-  const [reports, setReports] = useState<IReport[]>([]);
-  const [clients, setClients] = useState<IClient[]>([]);
-  const [contentItems, setContentItems] = useState<IContentItem[]>([]);
+  const [summary, setSummary] = useState<ClientSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<IReport | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [clientFilter, setClientFilter] = useState('');
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (clientFilter) params.set('clientId', clientFilter);
-    const [rRes, cRes] = await Promise.all([fetch(`/api/reports?${params}`), fetch('/api/clients')]);
-    const [rd, cd] = await Promise.all([rRes.json(), cRes.json()]);
-    setReports(rd.reports ?? []);
-    setClients(cd.clients ?? []);
-    setLoading(false);
-  }, [clientFilter]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const router = useRouter();
 
   useEffect(() => {
-    async function loadContent() {
-      if (!form.clientId) { setContentItems([]); return; }
-      const res = await fetch(`/api/content?clientId=${form.clientId}`);
-      const data = await res.json();
-      setContentItems((data.items ?? []).filter((i: IContentItem) => i.status === 'POSTED' || i.status === 'REPORTED'));
-    }
-    loadContent();
-  }, [form.clientId]);
+    fetch('/api/reports/summary')
+      .then(r => r.json())
+      .then(d => { setSummary(d.summary ?? []); setLoading(false); });
+  }, []);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const body = {
-        ...form,
-        daysAfterPosting: form.daysAfterPosting ? parseInt(form.daysAfterPosting) : 3,
-        views: form.views ? parseInt(form.views) : undefined,
-        reach: form.reach ? parseInt(form.reach) : undefined,
-        likes: form.likes ? parseInt(form.likes) : undefined,
-        comments: form.comments ? parseInt(form.comments) : undefined,
-        shares: form.shares ? parseInt(form.shares) : undefined,
-        saves: form.saves ? parseInt(form.saves) : undefined,
-        clicks: form.clicks ? parseInt(form.clicks) : undefined,
-        engagementRate: form.engagementRate ? parseFloat(form.engagementRate) : undefined,
-        contentItemId: form.contentItemId || undefined,
-      };
-      const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) { toast.error(data.error); return; }
-      toast.success('Report added');
-      setShowForm(false); setForm(emptyForm); fetchData();
-    } finally { setSaving(false); }
-  }
-
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await fetch(`/api/reports/${deleteTarget._id}`, { method: 'DELETE' });
-      setDeleteTarget(null); fetchData(); toast.success('Report deleted');
-    } finally { setDeleting(false); }
-  }
-
-  const f = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm(prev => ({ ...prev, [field]: e.target.value }));
+  if (loading) return <div className="flex-1 flex items-center justify-center"><LoadingSpinner size={32} /></div>;
 
   return (
     <>
-      <Topbar title="Post Reports" subtitle="Track content performance after posting"
-        actions={<Button onClick={() => setShowForm(true)}><Plus size={14} />Add Report</Button>} />
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        <div className="flex gap-3">
-          <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="px-3 py-2 rounded-lg text-sm border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <option value="">All Clients</option>
-            {clients.map(c => <option key={c._id} value={c._id} style={{ background: 'var(--bg-card)' }}>{c.name}</option>)}
-          </select>
-        </div>
-
-        {loading ? <LoadingSpinner fullPage /> : reports.length === 0 ? (
-          <EmptyState title="No reports yet" description="Add post performance reports after content is published" icon={BarChart3}
-            action={<Button onClick={() => setShowForm(true)}><Plus size={14} />Add Report</Button>} />
+      <Topbar
+        title="Reports"
+        subtitle="Click a client to view monthly performance boards and generate PDF reports"
+      />
+      <div className="flex-1 overflow-y-auto p-6">
+        {summary.length === 0 ? (
+          <EmptyState
+            title="No clients yet"
+            description="Add clients and create boards to start generating performance reports"
+            icon={BarChart3}
+          />
         ) : (
-          <div className="space-y-3">
-            {reports.map(r => {
-              const client = r.clientId as IClient;
-              const content = r.contentItemId as IContentItem | undefined;
-              return (
-                <div key={r._id} className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{content?.title ?? 'Post Report'}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{client?.name} · {formatDate(r.reportDate)} · {r.daysAfterPosting ?? 3} days after posting</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {r.screenshotUrl && <a href={r.screenshotUrl} target="_blank" rel="noopener" className="text-xs text-indigo-400 hover:text-indigo-300">Screenshot</a>}
-                      <button onClick={() => setDeleteTarget(r)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
-                    {[
-                      { icon: Eye, label: 'Views', value: r.views },
-                      { icon: Eye, label: 'Reach', value: r.reach },
-                      { icon: Heart, label: 'Likes', value: r.likes },
-                      { icon: MessageSquare, label: 'Comments', value: r.comments },
-                      { icon: Share2, label: 'Shares', value: r.shares },
-                      { icon: Bookmark, label: 'Saves', value: r.saves },
-                      { label: 'Engagement', value: r.engagementRate ? `${r.engagementRate}%` : undefined },
-                    ].map(({ label, value, icon: Icon }) => value !== undefined ? (
-                      <div key={label} className="text-center p-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
-                        {Icon && <Icon size={14} className="mx-auto mb-1" style={{ color: 'var(--text-muted)' }} />}
-                        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{typeof value === 'number' ? value.toLocaleString() : value}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                      </div>
-                    ) : null)}
-                  </div>
-                  {r.notes && <p className="text-xs mt-3 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>{r.notes}</p>}
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {summary.map(client => (
+              <ClientCard
+                key={client._id}
+                client={client}
+                onClick={() => router.push(`/reports/${client._id}`)}
+              />
+            ))}
           </div>
         )}
       </div>
-
-      <Modal open={showForm} onClose={() => setShowForm(false)} title="Add Post Report" size="lg"
-        footer={<><Button variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button><Button onClick={handleSave} loading={saving}>Add Report</Button></>}>
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Select label="Client *" value={form.clientId} onChange={f('clientId')} options={[{ value: '', label: '— Select Client —' }, ...clients.map(c => ({ value: c._id, label: c.name }))]} />
-            <Select label="Content Item" value={form.contentItemId} onChange={f('contentItemId')} options={[{ value: '', label: '— Select Content (optional) —' }, ...contentItems.map(i => ({ value: i._id, label: i.title }))]} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Report Date *" type="date" value={form.reportDate} onChange={f('reportDate')} required />
-            <Input label="Days After Posting" type="number" value={form.daysAfterPosting} onChange={f('daysAfterPosting')} />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Input label="Views" type="number" value={form.views} onChange={f('views')} placeholder="4820" />
-            <Input label="Reach" type="number" value={form.reach} onChange={f('reach')} placeholder="3900" />
-            <Input label="Likes" type="number" value={form.likes} onChange={f('likes')} />
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            <Input label="Comments" type="number" value={form.comments} onChange={f('comments')} />
-            <Input label="Shares" type="number" value={form.shares} onChange={f('shares')} />
-            <Input label="Saves" type="number" value={form.saves} onChange={f('saves')} />
-            <Input label="Clicks" type="number" value={form.clicks} onChange={f('clicks')} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Engagement Rate (%)" type="number" step="0.1" value={form.engagementRate} onChange={f('engagementRate')} placeholder="12.4" />
-            <Input label="Screenshot URL" value={form.screenshotUrl} onChange={f('screenshotUrl')} placeholder="https://..." />
-          </div>
-          <Textarea label="Notes" value={form.notes} onChange={f('notes')} rows={3} placeholder="Analysis of performance..." />
-        </form>
-      </Modal>
-      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting} title="Delete Report" message="Delete this report?" />
     </>
+  );
+}
+
+function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group text-left rounded-2xl border p-5 transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 active:translate-y-0"
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <Building2 size={18} className="text-white" />
+        </div>
+        <ChevronRight size={16} className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
+      </div>
+
+      <p className="text-base font-bold mb-0.5 truncate" style={{ color: 'var(--text-primary)' }}>
+        {client.name}
+      </p>
+      {client.businessType && (
+        <p className="text-xs mb-4 truncate" style={{ color: 'var(--text-muted)' }}>{client.businessType}</p>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <MiniStat icon={Layers}        label="Boards"    value={client.totalBoards} />
+        <MiniStat icon={FileText}      label="Published" value={client.totalPosted} />
+        <MiniStat icon={CheckCircle2}  label="Insights"  value={client.completedInsights} color="text-emerald-400" />
+        <MiniStat icon={AlertTriangle} label="Missing"   value={client.missingInsights}
+          color={client.missingInsights > 0 ? 'text-orange-400' : 'text-slate-400'} />
+      </div>
+
+      {client.totalPosted > 0 ? (
+        <>
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
+            <span className="text-xs font-bold"
+              style={{ color: client.progress === 100 ? '#10b981' : 'var(--text-primary)' }}>
+              {client.progress}%
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+            <div className="h-1.5 rounded-full transition-all" style={{
+              width: `${client.progress}%`,
+              background: client.progress === 100
+                ? 'linear-gradient(90deg,#10b981,#34d399)'
+                : 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+            }} />
+          </div>
+        </>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No published content yet</p>
+      )}
+    </button>
+  );
+}
+
+function MiniStat({ icon: Icon, label, value, color = 'text-slate-400' }: {
+  icon: React.ElementType; label: string; value: number; color?: string;
+}) {
+  return (
+    <div className="rounded-lg p-2" style={{ background: 'var(--bg-elevated)' }}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon size={10} className={color} />
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      </div>
+      <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
+    </div>
   );
 }

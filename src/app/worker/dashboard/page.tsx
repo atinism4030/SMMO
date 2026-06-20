@@ -17,13 +17,13 @@ async function getWorkerData(userId: string) {
   const year = now.getFullYear();
 
   const [myTasks, myOverdue, myInProgress, availableTasks, completedThisMonth] = await Promise.all([
-    Task.find({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: { $nin: ['DONE', 'CANCELLED', 'POSTED'] } })
-      .populate('clientId', 'name').populate('boardId', 'title').sort({ deadline: 1 }).limit(8),
-    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], deadline: { $lt: now }, status: { $nin: ['DONE', 'CANCELLED', 'POSTED'] } }),
-    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: 'IN_PROGRESS' }),
-    Task.find({ isOpenForClaim: true, claimedBy: { $exists: false }, status: { $nin: ['DONE', 'CANCELLED'] } })
+    Task.find({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: { $ne: 'POSTED' } })
+      .populate('clientId', 'name').populate('boardId', 'title').sort({ scheduledDate: 1, deadline: 1 }).limit(8),
+    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], scheduledDate: { $lt: now }, status: { $ne: 'POSTED' } }),
+    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: 'CONTENT_PREPARATION' }),
+    Task.find({ isOpenForClaim: true, claimedBy: { $exists: false }, status: { $ne: 'POSTED' } })
       .populate('clientId', 'name').sort({ priority: -1 }).limit(5),
-    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: { $in: ['DONE', 'POSTED'] }, completedAt: { $gte: new Date(year, month - 1, 1) } }),
+    Task.countDocuments({ $or: [{ assignedTo: userId }, { claimedBy: userId }], status: 'POSTED', postedDate: { $gte: new Date(year, month - 1, 1) } }),
   ]);
 
   return { myTasks, myOverdue, myInProgress, availableTasks, completedThisMonth };
@@ -60,7 +60,7 @@ export default async function WorkerDashboardPage() {
               <div className="space-y-2">
                 {(data.myTasks as unknown as ITask[]).map(task => {
                   const client = task.clientId as IClient;
-                  const overdue = isOverdue(task.deadline) && !['DONE', 'POSTED'].includes(task.status);
+                  const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
                   return (
                     <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors">
                       <div className="flex-1 min-w-0">
@@ -68,7 +68,7 @@ export default async function WorkerDashboardPage() {
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{client?.name}</p>
                       </div>
                       <TaskStatusBadge status={task.status} />
-                      {task.deadline && <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>{formatDate(task.deadline)}</span>}
+                      {(task.scheduledDate ?? task.deadline) && <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>{formatDate(task.scheduledDate ?? task.deadline)}</span>}
                       {overdue && <AlertCircle size={12} className="text-red-400" />}
                     </Link>
                   );

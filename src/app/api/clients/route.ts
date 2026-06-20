@@ -13,11 +13,18 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status');
   const search = searchParams.get('search');
 
+  const isDemo = searchParams.get('isDemo');
+  const limit = searchParams.get('limit');
+
   const query: Record<string, unknown> = {};
   if (status) query.status = status;
   if (search) query.name = { $regex: search, $options: 'i' };
+  if (isDemo === 'true') query.isDemo = true;
+  if (isDemo === 'false') query.isDemo = { $ne: true };
 
-  const clients = await Client.find(query).sort({ createdAt: -1 });
+  let q = Client.find(query).sort({ createdAt: -1 });
+  if (limit) q = q.limit(Number(limit));
+  const clients = await q;
   return NextResponse.json({ clients });
 }
 

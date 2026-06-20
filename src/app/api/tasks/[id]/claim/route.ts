@@ -24,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   task.claimedBy = session.userId as unknown as typeof task.claimedBy;
   task.assignedTo = session.userId as unknown as typeof task.assignedTo;
-  task.status = 'IN_PROGRESS';
+  task.status = 'CONTENT_PREPARATION';
   await task.save();
 
   await ActivityLog.create({

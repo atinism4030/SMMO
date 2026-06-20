@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+// Registers all Mongoose models so .populate() can resolve any ref by name.
+// Must be a static import so the side-effect runs before connectDB() is called.
+import '@/models';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 

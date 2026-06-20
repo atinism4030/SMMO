@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
   const openForClaim = searchParams.get('openForClaim');
   const myTasks = searchParams.get('myTasks');
 
+  const month = searchParams.get('month');
+  const year = searchParams.get('year');
+  const reportStatus = searchParams.get('reportStatus');
+
   const query: Record<string, unknown> = {};
   if (boardId) query.boardId = boardId;
   if (clientId) query.clientId = clientId;
@@ -25,10 +29,24 @@ export async function GET(request: NextRequest) {
   if (openForClaim === 'true') {
     query.isOpenForClaim = true;
     query.claimedBy = { $exists: false };
-    query.status = { $nin: ['DONE', 'CANCELLED'] };
+    query.status = { $nin: ['POSTED'] };
   }
   if (myTasks === 'true' && session.role === 'WORKER') {
     query.$or = [{ assignedTo: session.userId }, { claimedBy: session.userId }];
+  }
+  if (month && year) {
+    const m = parseInt(month);
+    const y = parseInt(year);
+    const startOfMonth = new Date(y, m - 1, 1);
+    const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
+    query.postedDate = { $gte: startOfMonth, $lte: endOfMonth };
+  }
+  if (reportStatus === 'needs_data') {
+    query.status = 'POSTED';
+    query['reporting.reportStatus'] = { $ne: 'COMPLETED' };
+    query['reporting.reportDueAt'] = { $lte: new Date() };
+  } else if (reportStatus === 'completed') {
+    query['reporting.reportStatus'] = 'COMPLETED';
   }
 
   const tasks = await Task.find(query)

@@ -7,7 +7,6 @@ import Board from '@/models/Board';
 import Task from '@/models/Task';
 import Payment from '@/models/Payment';
 import ContentItem from '@/models/ContentItem';
-import Report from '@/models/Report';
 
 export async function POST() {
   await connectDB();
@@ -20,7 +19,6 @@ export async function POST() {
     Task.deleteMany({}),
     Payment.deleteMany({}),
     ContentItem.deleteMany({}),
-    Report.deleteMany({}),
   ]);
 
   // Create users
@@ -58,19 +56,19 @@ export async function POST() {
   // Create tasks
   await Promise.all([
     // Meda 3 tasks
-    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Monthly Photoshoot — Food & Ambiance', taskType: 'PHOTOSHOOT', status: 'IN_PROGRESS', priority: 'HIGH', assignedTo: worker1._id, createdBy: admin._id, deadline: daysFromNow(3), platforms: ['Instagram', 'Facebook'], description: 'Shoot 20 food photos and 5 ambiance shots for the month.', isOpenForClaim: false, checklist: [{ text: 'Set up equipment', done: true }, { text: 'Shoot food dishes', done: true }, { text: 'Shoot ambiance', done: false }, { text: 'Transfer files', done: false }] }),
-    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Edit June Reel — Chef in Action', taskType: 'REEL', status: 'TO_DO', priority: 'MEDIUM', createdBy: admin._id, deadline: daysFromNow(5), platforms: ['Instagram', 'TikTok'], isOpenForClaim: true }),
-    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Design 8 Instagram Posts', taskType: 'POST_DESIGN', status: 'WAITING_APPROVAL', priority: 'MEDIUM', assignedTo: worker1._id, createdBy: admin._id, deadline: daysFromNow(2), platforms: ['Instagram'], isOpenForClaim: false }),
-    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Post Performance Report — May 28 Reel', taskType: 'REPORTING', status: 'TO_DO', priority: 'LOW', createdBy: admin._id, deadline: daysFromNow(1), isOpenForClaim: false }),
+    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Post 1 — June Food Feature', contentType: 'POST', status: 'CONTENT_PREPARATION', priority: 'HIGH', assignedTo: worker1._id, createdBy: admin._id, scheduledDate: daysFromNow(3), platforms: ['Instagram', 'Facebook'], description: 'Monthly food feature post — signature dish focus.', isOpenForClaim: false, checklist: [{ text: 'Content idea prepared', done: true }, { text: 'Photos selected', done: true }, { text: 'Design created', done: false }, { text: 'Caption written', done: false }, { text: 'Posted', done: false }] }),
+    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Reel 1 — Chef in Action', contentType: 'REEL', status: 'CONTENT_PREPARATION', priority: 'MEDIUM', createdBy: admin._id, scheduledDate: daysFromNow(5), platforms: ['Instagram', 'TikTok'], isOpenForClaim: true }),
+    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Post 2 — Ambiance Shot', contentType: 'POST', status: 'QUALITY_ASSURANCE', priority: 'MEDIUM', assignedTo: worker1._id, createdBy: admin._id, scheduledDate: daysFromNow(8), platforms: ['Instagram'], isOpenForClaim: false }),
+    Task.create({ boardId: medaBoard._id, clientId: meda3._id, title: 'Story 1 — Weekend Special', contentType: 'STORY', status: 'POST_VERIFIED', priority: 'LOW', assignedTo: worker1._id, createdBy: admin._id, scheduledDate: daysFromNow(2), platforms: ['Instagram'], isOpenForClaim: false }),
     // Timimetal tasks
-    Task.create({ boardId: timiBoard._id, clientId: timimetal._id, title: 'Drone Shoot — New Project Site', taskType: 'DRONE', status: 'TO_DO', priority: 'HIGH', createdBy: admin._id, deadline: daysFromNow(4), platforms: ['Instagram', 'Facebook'], isOpenForClaim: true }),
-    Task.create({ boardId: timiBoard._id, clientId: timimetal._id, title: 'Edit Project Showcase Video', taskType: 'VIDEO_SHOOT', status: 'IN_PROGRESS', priority: 'HIGH', assignedTo: worker2._id, createdBy: admin._id, deadline: daysFromNow(6), platforms: ['YouTube', 'Instagram'], isOpenForClaim: false }),
+    Task.create({ boardId: timiBoard._id, clientId: timimetal._id, title: 'Post 1 — Project Site Drone', contentType: 'VIDEO', status: 'CONTENT_PREPARATION', priority: 'HIGH', createdBy: admin._id, scheduledDate: daysFromNow(4), platforms: ['Instagram', 'Facebook'], isOpenForClaim: true }),
+    Task.create({ boardId: timiBoard._id, clientId: timimetal._id, title: 'Reel 1 — Project Showcase', contentType: 'REEL', status: 'CONTENT_PREPARATION', priority: 'HIGH', assignedTo: worker2._id, createdBy: admin._id, scheduledDate: daysFromNow(6), platforms: ['YouTube', 'Instagram'], isOpenForClaim: false }),
     // Armando tasks
-    Task.create({ boardId: armandoBoard._id, clientId: armando._id, title: 'Weekly Story Set — Pizza Specials', taskType: 'STORY', status: 'APPROVED', priority: 'MEDIUM', assignedTo: worker1._id, createdBy: admin._id, deadline: daysFromNow(1), platforms: ['Instagram', 'Facebook'], isOpenForClaim: false }),
-    Task.create({ boardId: armandoBoard._id, clientId: armando._id, title: 'June Payment Follow-up', taskType: 'PAYMENT', status: 'TO_DO', priority: 'HIGH', createdBy: admin._id, deadline: daysFromNow(7), isOpenForClaim: false }),
+    Task.create({ boardId: armandoBoard._id, clientId: armando._id, title: 'Story 1 — Pizza Specials', contentType: 'STORY', status: 'READY_TO_POST', priority: 'MEDIUM', assignedTo: worker1._id, createdBy: admin._id, scheduledDate: daysFromNow(1), platforms: ['Instagram', 'Facebook'], isOpenForClaim: false }),
+    Task.create({ boardId: armandoBoard._id, clientId: armando._id, title: 'Post 1 — Menu Highlight', contentType: 'POST', status: 'NEEDS_FIX', priority: 'HIGH', assignedTo: worker1._id, createdBy: admin._id, scheduledDate: daysFromNow(3), platforms: ['Instagram'], isOpenForClaim: false }),
     // Diwa tasks
-    Task.create({ boardId: diwaBoard._id, clientId: diwa._id, title: 'TikTok Reel — Chef Cooking Process', taskType: 'REEL', status: 'POSTED', priority: 'HIGH', assignedTo: worker2._id, createdBy: admin._id, deadline: daysFromNow(-2), platforms: ['TikTok', 'Instagram'], isOpenForClaim: false, completedAt: daysFromNow(-3) }),
-    Task.create({ boardId: diwaBoard._id, clientId: diwa._id, title: 'Post 3-Day Report — TikTok Reel', taskType: 'REPORTING', status: 'TO_DO', priority: 'HIGH', createdBy: admin._id, deadline: daysFromNow(0), isOpenForClaim: false }),
+    Task.create({ boardId: diwaBoard._id, clientId: diwa._id, title: 'Reel 1 — Chef Cooking Process', contentType: 'REEL', status: 'POSTED', priority: 'HIGH', assignedTo: worker2._id, createdBy: admin._id, scheduledDate: daysFromNow(-2), postedDate: daysFromNow(-2), platforms: ['TikTok', 'Instagram'], isOpenForClaim: false, reporting: { reportStatus: 'COMPLETED', reportCompletedAt: daysFromNow(-1), metrics: { views: 4820, reach: 3900, likes: 312, comments: 47, shares: 89, saves: 156, engagementRate: 12.4, notes: 'Excellent performance. Best reel of the month.' } } }),
+    Task.create({ boardId: diwaBoard._id, clientId: diwa._id, title: 'Post 1 — Diwa Special', contentType: 'POST', status: 'CONTENT_PREPARATION', priority: 'HIGH', createdBy: admin._id, scheduledDate: daysFromNow(5), isOpenForClaim: true }),
   ]);
 
   // Payments
@@ -91,22 +89,6 @@ export async function POST() {
     ContentItem.create({ clientId: armando._id, boardId: armandoBoard._id, title: 'Weekend Pizza Special Story', contentType: 'STORY', platforms: ['Instagram', 'Facebook'], scheduledDate: daysFromNow(2), status: 'SCHEDULED', createdBy: admin._id }),
   ]);
 
-  // Report for the posted Diwa reel
-  await Report.create({
-    clientId: diwa._id,
-    reportDate: daysFromNow(-1),
-    daysAfterPosting: 3,
-    views: 4820,
-    reach: 3900,
-    likes: 312,
-    comments: 47,
-    shares: 89,
-    saves: 156,
-    engagementRate: 12.4,
-    notes: 'Excellent performance. Best reel of the month. High saves indicate strong content value.',
-    createdBy: admin._id,
-  });
-
   return NextResponse.json({
     message: 'Seed completed successfully',
     data: {
@@ -116,7 +98,6 @@ export async function POST() {
       tasks: 10,
       payments: 6,
       contentItems: 4,
-      reports: 1,
     },
   });
 }

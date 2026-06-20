@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { getSession } from '@/lib/auth';
-import LoginContent from './Content';
+import SetupContent from './Content';
 
-export default async function LoginPage() {
+export default async function SetupPage() {
   const session = await getSession();
   if (session) {
     redirect(session.role === 'CEO' ? '/dashboard' : '/worker/dashboard');
@@ -12,9 +12,9 @@ export default async function LoginPage() {
 
   await connectDB();
   const ceoCount = await User.countDocuments({ role: 'CEO' });
-  if (ceoCount === 0) {
-    redirect('/setup');
+  if (ceoCount > 0) {
+    redirect('/login');
   }
 
-  return <LoginContent />;
+  return <SetupContent />;
 }

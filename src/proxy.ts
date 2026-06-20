@@ -6,7 +6,7 @@ import type { JWTPayload } from '@/types';
 const JWT_SECRET = process.env.JWT_SECRET!;
 const COOKIE_NAME = 'smmo_token';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/seed'];
+const PUBLIC_PATHS = ['/login', '/setup', '/api/auth/login', '/api/setup'];
 
 const CEO_ONLY_PATHS = [
   '/payments',
@@ -17,6 +17,8 @@ const CEO_ONLY_PATHS = [
   '/api/reports',
   '/api/users',
   '/api/agreements',
+  '/api/demo-data',
+  '/api/seed',
 ];
 
 function matchesPath(pathname: string, paths: string[]): boolean {
@@ -66,7 +68,12 @@ export async function proxy(request: NextRequest) {
 
     if (user.role === 'WORKER') {
       const isWorkerPath = pathname.startsWith('/worker/');
-      const isSharedApi = pathname.startsWith('/api/tasks') || pathname.startsWith('/api/clients') || pathname.startsWith('/api/boards') || pathname.startsWith('/api/content') || pathname.startsWith('/api/auth');
+      const isSharedApi =
+        pathname.startsWith('/api/tasks') ||
+        pathname.startsWith('/api/clients') ||
+        pathname.startsWith('/api/boards') ||
+        pathname.startsWith('/api/content') ||
+        pathname.startsWith('/api/auth');
       const isCeoOnlyPath = matchesPath(pathname, CEO_ONLY_PATHS);
 
       if (isCeoOnlyPath) {
@@ -94,6 +101,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 }
+
+// Next.js 16 requires the named `proxy` export (used by the middleware template).
+// The default export is also provided for backwards compatibility with next-server's
+// Node.js middleware loading path which calls: adapterFn = middlewareModule.default || middlewareModule
+export default proxy;
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],

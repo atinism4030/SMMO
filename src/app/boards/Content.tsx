@@ -20,7 +20,6 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => ({
 const YEARS = ['2024', '2025', '2026', '2027'].map(y => ({ value: y, label: y }));
 const PLATFORMS = ['Instagram', 'Facebook', 'TikTok', 'YouTube'];
 
-const emptyPlan = { posts: 0, reels: 0, stories: 0, photoshoots: 0, videoShoots: 0, droneShoots: 0, reports: 0 };
 const emptyForm = {
   clientId: '',
   title: '',
@@ -28,6 +27,7 @@ const emptyForm = {
   year: String(new Date().getFullYear()),
   description: '',
 };
+const emptyPlan = { posts: 0, reels: 0, stories: 0 };
 const emptySettings = {
   isOpenForClaim: true,
   defaultAssignedWorker: '',
@@ -36,15 +36,12 @@ const emptySettings = {
   platforms: [] as string[],
 };
 
-function NumericInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function NumInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+    <div>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
       <input
-        type="number"
-        min={0}
-        max={99}
-        value={value}
+        type="number" min={0} max={99} value={value}
         onChange={e => onChange(Math.max(0, parseInt(e.target.value) || 0))}
         className="w-full text-sm text-center rounded-lg border px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
@@ -53,24 +50,17 @@ function NumericInput({ label, value, onChange }: { label: string; value: number
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Divider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{children}</span>
+      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</span>
       <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
     </div>
   );
 }
 
-function countGeneratedTasks(plan: typeof emptyPlan): number {
-  return (
-    plan.posts * 5 +
-    plan.reels * 5 +
-    plan.stories * 2 +
-    (plan.photoshoots > 0 ? plan.photoshoots : 0) +
-    (plan.videoShoots > 0 ? plan.videoShoots : 0) +
-    (plan.droneShoots > 0 ? plan.droneShoots : 0)
-  );
+function totalCards(plan: typeof emptyPlan) {
+  return plan.posts + plan.reels + plan.stories;
 }
 
 export default function BoardsContent() {
@@ -88,28 +78,27 @@ export default function BoardsContent() {
 
   const now = new Date();
 
-  const fetchBoards = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [boardRes, clientRes, workerRes] = await Promise.all([
+    const [bRes, cRes, wRes] = await Promise.all([
       fetch('/api/boards'),
       fetch('/api/clients?status=ACTIVE'),
       fetch('/api/users'),
     ]);
-    const [bd, cd, wd] = await Promise.all([boardRes.json(), clientRes.json(), workerRes.json()]);
+    const [bd, cd, wd] = await Promise.all([bRes.json(), cRes.json(), wRes.json()]);
     setBoards(bd.boards ?? []);
     setClients(cd.clients ?? []);
     setWorkers((wd.users ?? []).filter((u: IUser) => u.role === 'WORKER' && u.status === 'ACTIVE'));
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchBoards(); }, [fetchBoards]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   function handleClientChange(clientId: string) {
     const client = clients.find(c => c._id === clientId);
     const monthName = MONTHS[parseInt(form.month) - 1]?.label;
     setForm(prev => ({
-      ...prev,
-      clientId,
+      ...prev, clientId,
       title: client ? `${client.name} — ${monthName} ${form.year} Board` : prev.title,
     }));
   }
@@ -127,21 +116,16 @@ export default function BoardsContent() {
   }
 
   function openForm() {
-    setForm(emptyForm);
-    setPlan(emptyPlan);
-    setSettings(emptySettings);
-    setDuplicateWarning(null);
-    setPendingConfirm(false);
-    setShowForm(true);
+    setForm(emptyForm); setPlan(emptyPlan); setSettings(emptySettings);
+    setDuplicateWarning(null); setPendingConfirm(false); setShowForm(true);
   }
 
   async function handleSave(e: React.FormEvent, forceConfirm = false) {
     e.preventDefault();
     if (!form.clientId) { toast.error('Please select a client'); return; }
-    setSaving(true);
-    setDuplicateWarning(null);
+    setSaving(true); setDuplicateWarning(null);
     try {
-      const hasContent = countGeneratedTasks(plan) > 0;
+      const hasContent = totalCards(plan) > 0;
       const body = {
         ...form,
         month: parseInt(form.month),
@@ -157,21 +141,16 @@ export default function BoardsContent() {
         confirmDuplicate: forceConfirm || pendingConfirm,
       };
       const res = await fetch('/api/boards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.status === 409 && data.error === 'DUPLICATE_BOARD') {
-        setDuplicateWarning(data.message);
-        setPendingConfirm(true);
-        return;
+        setDuplicateWarning(data.message); setPendingConfirm(true); return;
       }
       if (!res.ok) { toast.error(data.error ?? 'Failed to create board'); return; }
-      const taskCount = (data.board as IBoard).autoGeneratedTasksCount ?? 0;
-      toast.success(taskCount > 0 ? `Board created with ${taskCount} auto-generated tasks` : 'Board created');
-      setShowForm(false);
-      fetchBoards();
+      const count = (data.board as IBoard).autoGeneratedTasksCount ?? 0;
+      toast.success(count > 0 ? `Board created with ${count} content cards` : 'Board created');
+      setShowForm(false); fetchAll();
     } finally { setSaving(false); }
   }
 
@@ -181,14 +160,14 @@ export default function BoardsContent() {
     acc[key].push(b);
     return acc;
   }, {});
-
   const sortedKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-  const totalTaskPreview = countGeneratedTasks(plan);
+  const cardPreview = totalCards(plan);
 
   return (
     <>
       <Topbar title="Boards" subtitle="Monthly workspaces per client"
         actions={<Button onClick={openForm}><Plus size={14} />New Board</Button>} />
+
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? <LoadingSpinner fullPage /> : boards.length === 0 ? (
           <EmptyState title="No boards yet" description="Create a monthly board for a client" icon={LayoutGrid}
@@ -197,8 +176,7 @@ export default function BoardsContent() {
           <div className="space-y-8">
             {sortedKeys.map(key => {
               const [yearStr, monthStr] = key.split('-');
-              const month = parseInt(monthStr);
-              const year = parseInt(yearStr);
+              const month = parseInt(monthStr); const year = parseInt(yearStr);
               const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
               return (
                 <div key={key}>
@@ -210,10 +188,10 @@ export default function BoardsContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                     {grouped[key].map(board => {
                       const client = board.clientId as IClient;
-                      const taskCount = board.autoGeneratedTasksCount ?? 0;
+                      const count = board.autoGeneratedTasksCount ?? 0;
                       return (
                         <Link key={board._id} href={`/boards/${board._id}`}
-                          className="rounded-xl border p-4 hover:border-indigo-500/40 transition-all duration-150 group"
+                          className="rounded-xl border p-4 hover:border-indigo-500/40 transition-all duration-150"
                           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                           <div className="flex items-center gap-3 mb-3">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
@@ -231,9 +209,9 @@ export default function BoardsContent() {
                               {board.status}
                             </span>
                             <div className="flex items-center gap-2">
-                              {taskCount > 0 && (
+                              {count > 0 && (
                                 <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                                  <Zap size={11} className="text-amber-400" />{taskCount} tasks
+                                  <Zap size={11} className="text-amber-400" />{count} cards
                                 </span>
                               )}
                               {board.status === 'ARCHIVED' && <Archive size={13} style={{ color: 'var(--text-muted)' }} />}
@@ -250,32 +228,28 @@ export default function BoardsContent() {
         )}
       </div>
 
-      <Modal open={showForm} onClose={() => setShowForm(false)} title="Create Monthly Board" size="xl"
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Create Monthly Board" size="lg"
         footer={
           <div className="flex items-center justify-between w-full">
             <div>
-              {totalTaskPreview > 0 && (
+              {cardPreview > 0 && (
                 <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                   <Zap size={12} className="text-amber-400" />
-                  Will generate {totalTaskPreview} tasks automatically
+                  Will generate {cardPreview} content card{cardPreview > 1 ? 's' : ''}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button>
-              {pendingConfirm ? (
-                <Button onClick={e => handleSave(e, true)} loading={saving} variant="danger">
-                  Create Anyway
-                </Button>
-              ) : (
-                <Button onClick={handleSave} loading={saving}>Create Board</Button>
-              )}
+              {pendingConfirm
+                ? <Button variant="danger" onClick={e => handleSave(e, true)} loading={saving}>Create Anyway</Button>
+                : <Button onClick={handleSave} loading={saving}>Create Board</Button>
+              }
             </div>
           </div>
         }>
-        <form onSubmit={handleSave} className="space-y-5">
+        <form onSubmit={handleSave} className="space-y-4">
 
-          {/* Duplicate warning */}
           {duplicateWarning && (
             <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
               <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0" />
@@ -286,51 +260,36 @@ export default function BoardsContent() {
             </div>
           )}
 
-          <SectionLabel>Basic Info</SectionLabel>
+          <Divider label="Basic Info" />
 
-          <Select label="Client *" value={form.clientId}
-            onChange={e => handleClientChange(e.target.value)}
+          <Select label="Client *" value={form.clientId} onChange={e => handleClientChange(e.target.value)}
             options={[{ value: '', label: '— Select Client —' }, ...clients.map(c => ({ value: c._id, label: c.name }))]} />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="Month" value={form.month}
-              onChange={e => handleMonthYearChange('month', e.target.value)} options={MONTHS} />
-            <Select label="Year" value={form.year}
-              onChange={e => handleMonthYearChange('year', e.target.value)} options={YEARS} />
+            <Select label="Month" value={form.month} onChange={e => handleMonthYearChange('month', e.target.value)} options={MONTHS} />
+            <Select label="Year" value={form.year} onChange={e => handleMonthYearChange('year', e.target.value)} options={YEARS} />
           </div>
-          <Input label="Board Title *" value={form.title}
-            onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-            required placeholder="Meda 3 — June 2026 Board" />
-          <Textarea label="Notes (optional)" value={form.description}
-            onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+          <Input label="Board Title *" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} required placeholder="Meda 3 — June 2026 Board" />
+          <Textarea label="Notes (optional)" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} />
 
-          <SectionLabel>Monthly Content Plan</SectionLabel>
-
+          <Divider label="Monthly Content Plan" />
           <div className="grid grid-cols-3 gap-3">
-            <NumericInput label="Posts" value={plan.posts} onChange={v => setPlan(p => ({ ...p, posts: v }))} />
-            <NumericInput label="Reels" value={plan.reels} onChange={v => setPlan(p => ({ ...p, reels: v }))} />
-            <NumericInput label="Stories" value={plan.stories} onChange={v => setPlan(p => ({ ...p, stories: v }))} />
+            <NumInput label="Posts" value={plan.posts} onChange={v => setPlan(p => ({ ...p, posts: v }))} />
+            <NumInput label="Reels" value={plan.reels} onChange={v => setPlan(p => ({ ...p, reels: v }))} />
+            <NumInput label="Stories" value={plan.stories} onChange={v => setPlan(p => ({ ...p, stories: v }))} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <NumericInput label="Photoshoots" value={plan.photoshoots} onChange={v => setPlan(p => ({ ...p, photoshoots: v }))} />
-            <NumericInput label="Video Shoots" value={plan.videoShoots} onChange={v => setPlan(p => ({ ...p, videoShoots: v }))} />
-            <NumericInput label="Drone Shoots" value={plan.droneShoots} onChange={v => setPlan(p => ({ ...p, droneShoots: v }))} />
-          </div>
-          <NumericInput label="Reports" value={plan.reports} onChange={v => setPlan(p => ({ ...p, reports: v }))} />
 
-          {totalTaskPreview > 0 && (
+          {cardPreview > 0 && (
             <>
-              <SectionLabel>Default Task Settings</SectionLabel>
+              <Divider label="Card Settings" />
 
               <div>
-                <label className="text-xs font-medium block mb-2" style={{ color: 'var(--text-secondary)' }}>Platforms</label>
+                <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Platforms</label>
                 <div className="flex flex-wrap gap-2">
                   {PLATFORMS.map(p => (
                     <button key={p} type="button"
                       onClick={() => setSettings(prev => ({
                         ...prev,
-                        platforms: prev.platforms.includes(p)
-                          ? prev.platforms.filter(x => x !== p)
-                          : [...prev.platforms, p],
+                        platforms: prev.platforms.includes(p) ? prev.platforms.filter(x => x !== p) : [...prev.platforms, p],
                       }))}
                       className="px-3 py-1 rounded-full text-xs font-medium transition-all border"
                       style={{
@@ -361,41 +320,22 @@ export default function BoardsContent() {
                 <div className="flex items-start gap-2 rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
                   <Info size={14} className="text-indigo-400 mt-0.5 shrink-0" />
                   <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    Tasks will be distributed evenly across {MONTHS[parseInt(form.month) - 1]?.label} {form.year}.
-                    Posting dates are spaced from day 3 to day {new Date(parseInt(form.year), parseInt(form.month), 0).getDate() - 3}.
+                    Content cards will have scheduled dates spread evenly across {MONTHS[parseInt(form.month) - 1]?.label} {form.year}.
                   </p>
                 </div>
               )}
 
               {settings.deadlinePattern === 'SAME' && (
-                <Input label="Deadline Date" type="date" value={settings.sameDeadline}
+                <Input label="Scheduled Date" type="date" value={settings.sameDeadline}
                   onChange={e => setSettings(p => ({ ...p, sameDeadline: e.target.value }))} />
               )}
 
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="openForClaim" checked={settings.isOpenForClaim}
-                  onChange={e => setSettings(p => ({ ...p, isOpenForClaim: e.target.checked }))}
-                  className="rounded" />
+                  onChange={e => setSettings(p => ({ ...p, isOpenForClaim: e.target.checked }))} className="rounded" />
                 <label htmlFor="openForClaim" className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Make generated tasks open for workers to claim
+                  Cards open for workers to claim
                 </label>
-              </div>
-
-              {/* Generation preview */}
-              <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-elevated)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Tasks that will be generated:</p>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {plan.posts > 0 && <span>• {plan.posts} post{plan.posts > 1 ? 's' : ''} × 5 tasks = {plan.posts * 5}</span>}
-                  {plan.reels > 0 && <span>• {plan.reels} reel{plan.reels > 1 ? 's' : ''} × 5 tasks = {plan.reels * 5}</span>}
-                  {plan.stories > 0 && <span>• {plan.stories} stor{plan.stories > 1 ? 'ies' : 'y'} × 2 tasks = {plan.stories * 2}</span>}
-                  {plan.photoshoots > 0 && <span>• {plan.photoshoots} photoshoot{plan.photoshoots > 1 ? 's' : ''}</span>}
-                  {plan.videoShoots > 0 && <span>• {plan.videoShoots} video shoot{plan.videoShoots > 1 ? 's' : ''}</span>}
-                  {plan.droneShoots > 0 && <span>• {plan.droneShoots} drone shoot{plan.droneShoots > 1 ? 's' : ''}</span>}
-                </div>
-                <div className="pt-1 border-t flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Total: {totalTaskPreview} tasks</span>
-                  <span className="text-xs text-amber-400 flex items-center gap-1"><Zap size={11} />All start as TO_DO</span>
-                </div>
               </div>
             </>
           )}

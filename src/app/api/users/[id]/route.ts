@@ -38,7 +38,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     delete body.status;
   }
 
+  // Prevent role changes via this endpoint (use /api/setup for CEO creation)
+  delete body.role;
+
   if (body.password) {
+    if (typeof body.password === 'string' && body.password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+    }
     body.passwordHash = await bcrypt.hash(body.password, 12);
     delete body.password;
   }

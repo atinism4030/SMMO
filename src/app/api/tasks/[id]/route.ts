@@ -41,17 +41,39 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (assignedId !== session.userId && claimedId !== session.userId) {
       return NextResponse.json({ error: 'You can only update tasks assigned to you' }, { status: 403 });
     }
-    const allowedFields = ['status', 'checklist', 'attachments'];
+    const allowedFields = ['status', 'checklist', 'links'];
     for (const key of Object.keys(body)) {
       if (!allowedFields.includes(key)) delete body[key];
     }
   }
 
-  if (body.status === 'DONE' && !task.completedAt) {
-    body.completedAt = new Date();
+  // Expand body.reporting to dot-notation to avoid overwriting unrelated sub-fields
+  const updateDoc: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body)) {
+    if (k === 'reporting' && v && typeof v === 'object') {
+      const rep = v as Record<string, unknown>;
+      for (const [rk, rv] of Object.entries(rep)) {
+        if (rk === 'metrics' && rv && typeof rv === 'object') {
+          for (const [mk, mv] of Object.entries(rv as Record<string, unknown>)) {
+            updateDoc[`reporting.metrics.${mk}`] = mv;
+          }
+        } else {
+          updateDoc[`reporting.${rk}`] = rv;
+        }
+      }
+    } else {
+      updateDoc[k] = v;
+    }
   }
 
-  const updated = await Task.findByIdAndUpdate(id, body, { new: true })
+  if (body.status === 'POSTED' && !task.postedDate) {
+    updateDoc.postedDate = new Date();
+    const hoursDelay = task.contentType === 'STORY' ? 24 : 48;
+    updateDoc['reporting.reportDueAt'] = new Date(Date.now() + hoursDelay * 3_600_000);
+    updateDoc['reporting.reportStatus'] = 'WAITING_FOR_REPORT_TIME';
+  }
+
+  const updated = await Task.findByIdAndUpdate(id, updateDoc, { new: true })
     .populate('assignedTo', 'name email')
     .populate('claimedBy', 'name email')
     .populate('createdBy', 'name');

@@ -5,21 +5,12 @@ import Topbar from '@/components/layout/Topbar';
 import { TaskStatusBadge, PriorityBadge, PlatformBadge } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatDate, isOverdue, TASK_TYPES } from '@/lib/utils';
+import { formatDate, isOverdue, CARD_STATUSES } from '@/lib/utils';
 import type { ITask, IClient, IUser } from '@/types';
 import { CheckSquare, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 
-const STATUSES = [
-  { value: '', label: 'All Statuses' },
-  { value: 'TO_DO', label: 'To Do' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'WAITING_APPROVAL', label: 'Waiting Approval' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'SCHEDULED', label: 'Scheduled' },
-  { value: 'POSTED', label: 'Posted' },
-  { value: 'DONE', label: 'Done' },
-];
+const STATUSES = [{ value: '', label: 'All Statuses' }, ...CARD_STATUSES];
 
 export default function TasksContent() {
   const [tasks, setTasks] = useState<ITask[]>([]);
@@ -50,7 +41,7 @@ export default function TasksContent() {
 
   return (
     <>
-      <Topbar title="All Tasks" subtitle={`${filtered.length} task${filtered.length !== 1 ? 's' : ''}`} />
+      <Topbar title="All Cards" subtitle={`${filtered.length} card${filtered.length !== 1 ? 's' : ''}`} />
       <div className="flex-1 overflow-y-auto p-6">
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="relative flex-1 min-w-[200px] max-w-xs">
@@ -79,7 +70,7 @@ export default function TasksContent() {
             <table className="w-full">
               <thead>
                 <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                  {['Task', 'Client', 'Type', 'Status', 'Priority', 'Assigned', 'Deadline', ''].map(h => (
+                  {['Card', 'Client', 'Status', 'Priority', 'Assigned', 'Scheduled', ''].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
@@ -88,8 +79,7 @@ export default function TasksContent() {
                 {filtered.map(task => {
                   const client = task.clientId as IClient;
                   const worker = task.assignedTo as IUser | undefined;
-                  const overdue = isOverdue(task.deadline) && !['DONE', 'POSTED', 'CANCELLED'].includes(task.status);
-                  const type = TASK_TYPES.find(t => t.value === task.taskType)?.label ?? task.taskType;
+                  const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
                   return (
                     <tr key={task._id} className="hover:bg-white/3 transition-colors">
                       <td className="px-4 py-3">
@@ -104,7 +94,6 @@ export default function TasksContent() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{client?.name}</td>
-                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{type}</td>
                       <td className="px-4 py-3"><TaskStatusBadge status={task.status} /></td>
                       <td className="px-4 py-3"><PriorityBadge priority={task.priority} /></td>
                       <td className="px-4 py-3">
@@ -120,8 +109,8 @@ export default function TasksContent() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {task.deadline ? (
-                          <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>{formatDate(task.deadline)}</span>
+                        {(task.scheduledDate ?? task.deadline) ? (
+                          <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>{formatDate(task.scheduledDate ?? task.deadline)}</span>
                         ) : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>}
                       </td>
                       <td className="px-4 py-3">

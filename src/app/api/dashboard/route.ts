@@ -31,15 +31,15 @@ export async function GET() {
     ] = await Promise.all([
       Client.countDocuments({ status: 'ACTIVE' }),
       Payment.find({ month: currentMonth, year: currentYear }),
-      Task.countDocuments({ deadline: { $lt: now }, status: { $nin: ['DONE', 'CANCELLED', 'POSTED'] } }),
+      Task.countDocuments({ scheduledDate: { $lt: now }, status: { $ne: 'POSTED' as const } }),
       Task.countDocuments({
-        deadline: {
+        scheduledDate: {
           $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
           $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
         },
-        status: { $nin: ['DONE', 'CANCELLED'] },
+        status: { $ne: 'POSTED' as const },
       }),
-      Task.countDocuments({ status: 'WAITING_APPROVAL' }),
+      Task.countDocuments({ status: 'NEEDS_FIX' as const }),
       ContentItem.countDocuments({
         scheduledDate: {
           $gte: now,
@@ -64,7 +64,7 @@ export async function GET() {
       latePayments,
       overdueTasks,
       todayTasks,
-      waitingApproval,
+      needsFixCount: waitingApproval,
       scheduledThisWeek,
       recentActivity,
       tasksByStatus,
@@ -75,26 +75,26 @@ export async function GET() {
   const [myTasks, myOverdue, myInProgress, availableTasks, completedThisMonth] = await Promise.all([
     Task.find({
       $or: [{ assignedTo: session.userId }, { claimedBy: session.userId }],
-      status: { $nin: ['DONE', 'CANCELLED'] },
-    }).populate('clientId', 'name').populate('boardId', 'title').sort({ deadline: 1 }).limit(10),
+      status: { $ne: 'POSTED' as const },
+    }).populate('clientId', 'name').populate('boardId', 'title').sort({ scheduledDate: 1 }).limit(10),
     Task.countDocuments({
       $or: [{ assignedTo: session.userId }, { claimedBy: session.userId }],
-      deadline: { $lt: now },
-      status: { $nin: ['DONE', 'CANCELLED'] },
+      scheduledDate: { $lt: now },
+      status: { $ne: 'POSTED' as const },
     }),
     Task.countDocuments({
       $or: [{ assignedTo: session.userId }, { claimedBy: session.userId }],
-      status: 'IN_PROGRESS',
+      status: 'CONTENT_PREPARATION' as const,
     }),
     Task.find({
       isOpenForClaim: true,
       claimedBy: { $exists: false },
-      status: { $nin: ['DONE', 'CANCELLED'] },
+      status: { $ne: 'POSTED' as const },
     }).populate('clientId', 'name').limit(5),
     Task.countDocuments({
       $or: [{ assignedTo: session.userId }, { claimedBy: session.userId }],
-      status: { $in: ['DONE', 'POSTED'] },
-      completedAt: {
+      status: 'POSTED' as const,
+      postedDate: {
         $gte: new Date(currentYear, currentMonth - 1, 1),
         $lt: new Date(currentYear, currentMonth, 1),
       },

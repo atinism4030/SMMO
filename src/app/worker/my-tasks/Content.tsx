@@ -26,7 +26,7 @@ export default function MyTasksContent() {
       <Topbar title="My Tasks" subtitle={`${filtered.length} task${filtered.length !== 1 ? 's' : ''}`} />
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
         <div className="flex gap-2 flex-wrap">
-          {['', 'TO_DO', 'IN_PROGRESS', 'WAITING_APPROVAL', 'APPROVED', 'DONE'].map(s => (
+          {['', 'CONTENT_PREPARATION', 'QUALITY_ASSURANCE', 'POST_VERIFIED', 'READY_TO_POST', 'POSTED', 'NEEDS_FIX'].map(s => (
             <button key={s} onClick={() => setFilter(s)}
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
               style={{ background: filter === s ? 'rgba(99,102,241,0.2)' : 'var(--bg-card)', borderColor: filter === s ? '#6366f1' : 'var(--border)', color: filter === s ? '#a5b4fc' : 'var(--text-secondary)' }}>
@@ -41,7 +41,7 @@ export default function MyTasksContent() {
           <div className="space-y-2">
             {filtered.map(task => {
               const client = task.clientId as IClient;
-              const overdue = isOverdue(task.deadline) && !['DONE', 'POSTED', 'CANCELLED'].includes(task.status);
+              const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
               return (
                 <Link key={task._id} href={`/worker/tasks/${task._id}`}
                   className="flex items-center gap-4 p-4 rounded-xl border hover:border-indigo-500/30 transition-all"

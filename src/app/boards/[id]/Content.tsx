@@ -3,27 +3,35 @@
 import { useState, useEffect, use } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import Button from '@/components/ui/Button';
-import { PriorityBadge, PlatformBadge } from '@/components/ui/Badge';
+import { ContentTypeBadge, PlatformBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatDate, isOverdue, TASK_TYPES, PLATFORMS } from '@/lib/utils';
-import type { IBoard, ITask, IClient, IUser, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Plus, ArrowLeft, AlertCircle, CheckSquare, Zap, Camera, Video, Image, FileText } from 'lucide-react';
+import { formatDate, isOverdue, getContentTypeColor, CONTENT_TYPES, CARD_STATUSES, PLATFORMS } from '@/lib/utils';
+import type { IBoard, ITask, IClient, IUser, TaskStatus, TaskPriority, ContentType } from '@/types';
+import { Plus, ArrowLeft, AlertCircle, CheckSquare, Zap, Camera, Video, FileText } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-const STATUSES: { key: TaskStatus; label: string; color: string }[] = [
-  { key: 'TO_DO', label: 'To Do', color: '#6b7280' },
-  { key: 'IN_PROGRESS', label: 'In Progress', color: '#3b82f6' },
-  { key: 'WAITING_APPROVAL', label: 'Waiting Approval', color: '#f59e0b' },
-  { key: 'APPROVED', label: 'Approved', color: '#10b981' },
-  { key: 'SCHEDULED', label: 'Scheduled', color: '#8b5cf6' },
-  { key: 'POSTED', label: 'Posted', color: '#34d399' },
-  { key: 'DONE', label: 'Done', color: '#22c55e' },
+const COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
+  { key: 'CONTENT_PREPARATION', label: 'Content Preparation', color: '#3b82f6' },
+  { key: 'QUALITY_ASSURANCE',   label: 'Quality Assurance',   color: '#f59e0b' },
+  { key: 'POST_VERIFIED',       label: 'Post Verified',       color: '#10b981' },
+  { key: 'READY_TO_POST',       label: 'Ready to Post',       color: '#8b5cf6' },
+  { key: 'POSTED',              label: 'Posted',              color: '#34d399' },
+  { key: 'NEEDS_FIX',           label: 'Needs Fix',           color: '#ef4444' },
 ];
 
-const emptyTask = { title: '', description: '', taskType: 'OTHER' as TaskType, priority: 'MEDIUM' as TaskPriority, assignedTo: '', deadline: '', platforms: [] as string[], isOpenForClaim: false, checklist: '' };
+const emptyCard = {
+  title: '',
+  description: '',
+  contentType: 'POST' as ContentType,
+  priority: 'MEDIUM' as TaskPriority,
+  assignedTo: '',
+  deadline: '',
+  platforms: [] as string[],
+  isOpenForClaim: false,
+};
 
 export default function BoardDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -31,19 +39,15 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [workers, setWorkers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [taskForm, setTaskForm] = useState(emptyTask);
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [cardForm, setCardForm] = useState(emptyCard);
   const [saving, setSaving] = useState(false);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [updatingTask, setUpdatingTask] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [boardRes, workersRes] = await Promise.all([
-        fetch(`/api/boards/${id}`),
-        fetch('/api/users'),
-      ]);
+      const [boardRes, workersRes] = await Promise.all([fetch(`/api/boards/${id}`), fetch('/api/users')]);
       const [bd, wd] = await Promise.all([boardRes.json(), workersRes.json()]);
       setBoard(bd.board);
       setTasks(bd.tasks ?? []);
@@ -53,52 +57,46 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
     load();
   }, [id]);
 
-  async function handleCreateTask(e: React.FormEvent) {
+  async function handleCreateCard(e: React.FormEvent) {
     e.preventDefault();
     if (!board) return;
     setSaving(true);
     try {
       const client = board.clientId as IClient;
-      const checklistItems = taskForm.checklist ? taskForm.checklist.split('\n').filter(Boolean).map(t => ({ text: t.trim(), done: false })) : [];
       const body = {
         boardId: id,
         clientId: typeof client === 'string' ? client : client._id,
-        title: taskForm.title,
-        description: taskForm.description,
-        taskType: taskForm.taskType,
-        priority: taskForm.priority,
-        assignedTo: taskForm.assignedTo || undefined,
-        deadline: taskForm.deadline || undefined,
-        platforms: selectedPlatforms,
-        isOpenForClaim: taskForm.isOpenForClaim,
-        checklist: checklistItems,
+        title: cardForm.title,
+        description: cardForm.description,
+        contentType: cardForm.contentType,
+        priority: cardForm.priority,
+        assignedTo: cardForm.assignedTo || undefined,
+        deadline: cardForm.deadline || undefined,
+        platforms: cardForm.platforms,
+        isOpenForClaim: cardForm.isOpenForClaim,
       };
       const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error); return; }
       setTasks(prev => [data.task, ...prev]);
-      setShowTaskForm(false);
-      setTaskForm(emptyTask);
-      setSelectedPlatforms([]);
-      toast.success('Task created');
+      setShowCardForm(false); setCardForm(emptyCard);
+      toast.success('Card created');
     } finally { setSaving(false); }
   }
 
-  async function updateTaskStatus(taskId: string, newStatus: TaskStatus) {
+  async function updateStatus(taskId: string, newStatus: TaskStatus) {
     setUpdatingTask(taskId);
     const res = await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
     const data = await res.json();
-    if (res.ok) {
-      setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
-    }
+    if (res.ok) setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
     setUpdatingTask(null);
   }
 
-  const tasksByStatus = STATUSES.reduce<Record<string, ITask[]>>((acc, s) => {
-    acc[s.key] = tasks.filter(t => t.status === s.key);
+  const byStatus = COLUMNS.reduce<Record<string, ITask[]>>((acc, col) => {
+    acc[col.key] = tasks.filter(t => t.status === col.key);
     return acc;
   }, {});
 
@@ -108,8 +106,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
   const client = board.clientId as IClient;
   const cp = board.contentPlan;
   const totalGenerated = board.autoGeneratedTasksCount ?? 0;
-  const doneTasks = tasks.filter(t => t.status === 'DONE' || t.status === 'POSTED').length;
-  const pendingTasks = tasks.length - doneTasks;
+  const postedCount = tasks.filter(t => t.status === 'POSTED').length;
 
   return (
     <>
@@ -118,137 +115,137 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
         subtitle={client?.name}
         actions={
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setShowTaskForm(true)}><Plus size={13} />Add Task</Button>
+            <Button size="sm" onClick={() => setShowCardForm(true)}><Plus size={13} />Add Card</Button>
             <Link href="/boards"><Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button></Link>
           </div>
         }
       />
-      {/* Content plan summary — only shown when a content plan exists */}
+
+      {/* Summary bar */}
       {cp && (
         <div className="px-6 pt-4 pb-2 flex flex-wrap gap-3">
-          {/* Monthly plan card */}
-          <div className="rounded-xl border p-4 flex-1 min-w-[260px]" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Monthly Plan</p>
-            <div className="grid grid-cols-3 gap-y-2 gap-x-4">
+          <div className="rounded-xl border p-4 flex-1 min-w-65" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Monthly Plan</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1">
               {[
-                { icon: <FileText size={12} />, label: 'Posts', value: cp.posts },
-                { icon: <Video size={12} />, label: 'Reels', value: cp.reels },
-                { icon: <Image size={12} />, label: 'Stories', value: cp.stories },
-                { icon: <Camera size={12} />, label: 'Photoshoots', value: cp.photoshoots },
-                { icon: <Video size={12} />, label: 'Video Shoots', value: cp.videoShoots },
-                { icon: <Zap size={12} />, label: 'Drone Shoots', value: cp.droneShoots },
-              ].filter(item => item.value > 0).map(item => (
-                <div key={item.label} className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--text-muted)' }}>{item.icon}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{item.value}</span> {item.label}
-                  </span>
-                </div>
+                { icon: <FileText size={12} />, label: 'Posts', v: cp.posts },
+                { icon: <Video size={12} />, label: 'Reels', v: cp.reels },
+                { icon: <Camera size={12} />, label: 'Stories', v: cp.stories },
+              ].filter(x => x.v > 0).map(x => (
+                <span key={x.label} className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{x.icon}</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{x.v}</strong> {x.label}
+                </span>
               ))}
             </div>
           </div>
-          {/* Generated tasks summary card */}
           {totalGenerated > 0 && (
-            <div className="rounded-xl border p-4 min-w-[200px]" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Generated Tasks</p>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Total</span>
-                  <span className="text-sm font-bold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-                    <Zap size={12} className="text-amber-400" />{totalGenerated}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Done</span>
-                  <span className="text-sm font-semibold text-emerald-400">{doneTasks}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Pending</span>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{pendingTasks}</span>
-                </div>
-                <div className="pt-1.5">
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
-                    <div className="h-1.5 rounded-full bg-emerald-500 transition-all"
-                      style={{ width: tasks.length > 0 ? `${(doneTasks / tasks.length) * 100}%` : '0%' }} />
-                  </div>
-                </div>
+            <div className="rounded-xl border p-4 min-w-50" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Progress</p>
+              <div className="flex items-end gap-2">
+                <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{postedCount}</span>
+                <span className="text-xs pb-1" style={{ color: 'var(--text-muted)' }}>/ {tasks.length} posted</span>
+              </div>
+              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                <div className="h-1.5 rounded-full bg-emerald-500 transition-all"
+                  style={{ width: tasks.length > 0 ? `${(postedCount / tasks.length) * 100}%` : '0%' }} />
               </div>
             </div>
           )}
         </div>
       )}
 
+      {/* Kanban */}
       <div className="flex-1 overflow-x-auto">
         <div className="flex gap-4 p-6 min-w-max">
-          {STATUSES.map(col => (
-            <div key={col.key} className="w-72 flex-shrink-0">
+          {COLUMNS.map(col => (
+            <div key={col.key} className="w-72 shrink-0">
               <div className="flex items-center gap-2 mb-3 px-1">
                 <div className="w-2 h-2 rounded-full" style={{ background: col.color }} />
                 <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{col.label}</span>
-                <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>{tasksByStatus[col.key]?.length ?? 0}</span>
+                <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                  {byStatus[col.key]?.length ?? 0}
+                </span>
               </div>
 
-              <div className="space-y-2 min-h-[200px]">
-                {(tasksByStatus[col.key] ?? []).length === 0 ? (
+              <div className="space-y-2 min-h-50">
+                {(byStatus[col.key] ?? []).length === 0 ? (
                   <div className="rounded-lg border border-dashed p-4 text-center" style={{ borderColor: 'var(--border)' }}>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No tasks</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No cards</p>
                   </div>
                 ) : (
-                  (tasksByStatus[col.key] ?? []).map(task => {
+                  (byStatus[col.key] ?? []).map(task => {
                     const worker = task.assignedTo as IUser | undefined;
-                    const overdue = isOverdue(task.deadline) && !['DONE', 'POSTED', 'CANCELLED'].includes(task.status);
+                    const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
                     const checklist = task.checklist ?? [];
                     const done = checklist.filter(c => c.done).length;
                     return (
-                      <div key={task._id} className="rounded-xl border p-3 hover:border-indigo-500/30 transition-all duration-150" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                      <Link key={task._id} href={`/tasks/${task._id}`}
+                        className="block rounded-xl border p-3 hover:border-indigo-500/30 transition-all duration-150 cursor-pointer"
+                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                        {/* Title + type */}
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <Link href={`/tasks/${task._id}`} className="text-xs font-medium leading-tight hover:text-indigo-300 transition-colors" style={{ color: 'var(--text-primary)' }}>
-                            {task.title}
-                          </Link>
-                          <PriorityBadge priority={task.priority} />
+                          <p className="text-xs font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
+                          <ContentTypeBadge type={task.contentType} />
                         </div>
 
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {task.platforms?.slice(0, 2).map(p => <PlatformBadge key={p} platform={p} />)}
-                        </div>
+                        {/* Platforms */}
+                        {(task.platforms ?? []).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {(task.platforms ?? []).slice(0, 3).map(p => <PlatformBadge key={p} platform={p} />)}
+                          </div>
+                        )}
 
+                        {/* Checklist progress */}
                         {checklist.length > 0 && (
                           <div className="flex items-center gap-1.5 mb-2">
                             <CheckSquare size={11} style={{ color: 'var(--text-muted)' }} />
                             <div className="flex-1 h-1 rounded-full" style={{ background: 'var(--bg-elevated)' }}>
-                              <div className="h-1 rounded-full bg-emerald-500" style={{ width: `${(done / checklist.length) * 100}%` }} />
+                              <div className="h-1 rounded-full bg-emerald-500 transition-all"
+                                style={{ width: `${(done / checklist.length) * 100}%` }} />
                             </div>
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{done}/{checklist.length}</span>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between mt-2">
+                        {/* Footer: worker + date */}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
                           <div className="flex items-center gap-1.5">
-                            {worker && (
-                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
-                                {(worker as IUser).name?.charAt(0)}
+                            {worker && typeof worker === 'object' ? (
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                                {worker.name?.charAt(0)}
                               </div>
-                            )}
-                            {!worker && task.isOpenForClaim && <span className="text-xs text-yellow-400">Open</span>}
+                            ) : task.isOpenForClaim ? (
+                              <span className="text-xs text-yellow-400">Open</span>
+                            ) : null}
                           </div>
                           <div className="flex items-center gap-1">
                             {overdue && <AlertCircle size={11} className="text-red-400" />}
-                            {task.deadline && <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>{formatDate(task.deadline)}</span>}
+                            {(task.scheduledDate ?? task.deadline) && (
+                              <span className={`text-xs ${overdue ? 'text-red-400' : ''}`} style={!overdue ? { color: 'var(--text-muted)' } : undefined}>
+                                {formatDate(task.scheduledDate ?? task.deadline)}
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        <div className="mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                        {/* Quick status change */}
+                        <div className="mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}
+                          onClick={e => e.preventDefault()}>
                           <select
                             value={task.status}
                             disabled={updatingTask === task._id}
-                            onChange={e => updateTaskStatus(task._id, e.target.value as TaskStatus)}
+                            onChange={e => updateStatus(task._id, e.target.value as TaskStatus)}
+                            onClick={e => e.preventDefault()}
                             className="w-full text-xs px-2 py-1 rounded cursor-pointer"
-                            style={{ background: 'var(--bg-elevated)', borderColor: 'transparent', color: 'var(--text-secondary)' }}
-                          >
-                            {STATUSES.map(s => <option key={s.key} value={s.key} style={{ background: 'var(--bg-elevated)' }}>{s.label}</option>)}
+                            style={{ background: 'var(--bg-elevated)', borderColor: 'transparent', color: 'var(--text-secondary)' }}>
+                            {CARD_STATUSES.map(s => (
+                              <option key={s.value} value={s.value} style={{ background: 'var(--bg-elevated)' }}>{s.label}</option>
+                            ))}
                           </select>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })
                 )}
@@ -258,39 +255,55 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      <Modal open={showTaskForm} onClose={() => setShowTaskForm(false)} title="Create Task" size="lg"
-        footer={<><Button variant="secondary" onClick={() => setShowTaskForm(false)}>Cancel</Button><Button onClick={handleCreateTask} loading={saving}>Create Task</Button></>}>
-        <form onSubmit={handleCreateTask} className="space-y-4">
-          <Input label="Task Title *" value={taskForm.title} onChange={e => setTaskForm(p => ({ ...p, title: e.target.value }))} required placeholder="e.g. Monthly Photoshoot" />
-          <Textarea label="Description" value={taskForm.description} onChange={e => setTaskForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+      {/* Create card modal */}
+      <Modal open={showCardForm} onClose={() => setShowCardForm(false)} title="Add Content Card" size="md"
+        footer={<><Button variant="secondary" onClick={() => setShowCardForm(false)}>Cancel</Button><Button onClick={handleCreateCard} loading={saving}>Create Card</Button></>}>
+        <form onSubmit={handleCreateCard} className="space-y-4">
+          <Input label="Title *" value={cardForm.title}
+            onChange={e => setCardForm(p => ({ ...p, title: e.target.value }))}
+            required placeholder="Post 1, Reel 2, Story 5..." />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="Task Type" value={taskForm.taskType} onChange={e => setTaskForm(p => ({ ...p, taskType: e.target.value as TaskType }))} options={TASK_TYPES} />
-            <Select label="Priority" value={taskForm.priority} onChange={e => setTaskForm(p => ({ ...p, priority: e.target.value as TaskPriority }))}
+            <Select label="Content Type" value={cardForm.contentType}
+              onChange={e => setCardForm(p => ({ ...p, contentType: e.target.value as ContentType }))}
+              options={CONTENT_TYPES} />
+            <Select label="Priority" value={cardForm.priority}
+              onChange={e => setCardForm(p => ({ ...p, priority: e.target.value as TaskPriority }))}
               options={[{ value: 'LOW', label: 'Low' }, { value: 'MEDIUM', label: 'Medium' }, { value: 'HIGH', label: 'High' }, { value: 'URGENT', label: 'Urgent' }]} />
           </div>
+          <Textarea label="Description" value={cardForm.description}
+            onChange={e => setCardForm(p => ({ ...p, description: e.target.value }))} rows={2} />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="Assign to Worker" value={taskForm.assignedTo} onChange={e => setTaskForm(p => ({ ...p, assignedTo: e.target.value }))}
+            <Select label="Assign to Worker" value={cardForm.assignedTo}
+              onChange={e => setCardForm(p => ({ ...p, assignedTo: e.target.value }))}
               options={[{ value: '', label: '— Open for Claim —' }, ...workers.map(w => ({ value: w._id, label: w.name }))]} />
-            <Input label="Deadline" type="date" value={taskForm.deadline} onChange={e => setTaskForm(p => ({ ...p, deadline: e.target.value }))} />
+            <Input label="Scheduled Date" type="date" value={cardForm.deadline}
+              onChange={e => setCardForm(p => ({ ...p, deadline: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs font-medium block mb-2" style={{ color: 'var(--text-secondary)' }}>Platforms</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Platforms</label>
             <div className="flex flex-wrap gap-2">
               {PLATFORMS.map(p => (
                 <button key={p} type="button"
-                  onClick={() => setSelectedPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])}
+                  onClick={() => setCardForm(prev => ({
+                    ...prev,
+                    platforms: prev.platforms.includes(p) ? prev.platforms.filter(x => x !== p) : [...prev.platforms, p],
+                  }))}
                   className="px-3 py-1 rounded-full text-xs font-medium transition-all border"
-                  style={{ background: selectedPlatforms.includes(p) ? 'rgba(99,102,241,0.2)' : 'var(--bg-elevated)', borderColor: selectedPlatforms.includes(p) ? '#6366f1' : 'var(--border)', color: selectedPlatforms.includes(p) ? '#a5b4fc' : 'var(--text-secondary)' }}>
+                  style={{
+                    background: cardForm.platforms.includes(p) ? 'rgba(99,102,241,0.2)' : 'var(--bg-elevated)',
+                    borderColor: cardForm.platforms.includes(p) ? '#6366f1' : 'var(--border)',
+                    color: cardForm.platforms.includes(p) ? '#a5b4fc' : 'var(--text-secondary)',
+                  }}>
                   {p}
                 </button>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="openForClaim" checked={taskForm.isOpenForClaim} onChange={e => setTaskForm(p => ({ ...p, isOpenForClaim: e.target.checked }))} className="rounded" />
-            <label htmlFor="openForClaim" className="text-sm" style={{ color: 'var(--text-secondary)' }}>Open for workers to claim</label>
+            <input type="checkbox" id="openClaim" checked={cardForm.isOpenForClaim}
+              onChange={e => setCardForm(p => ({ ...p, isOpenForClaim: e.target.checked }))} className="rounded" />
+            <label htmlFor="openClaim" className="text-sm" style={{ color: 'var(--text-secondary)' }}>Open for workers to claim</label>
           </div>
-          <Textarea label="Checklist (one item per line)" value={taskForm.checklist} onChange={e => setTaskForm(p => ({ ...p, checklist: e.target.value }))} rows={3} placeholder="Set up equipment&#10;Shoot food photos&#10;Transfer files" />
         </form>
       </Modal>
     </>
