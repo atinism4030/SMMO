@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Star,
   LogOut,
+  Camera,
 } from 'lucide-react';
 
 interface NavItem {
@@ -34,6 +35,7 @@ const ceoNav: NavItem[] = [
   { label: 'Content Calendar', href: '/calendar', icon: Calendar },
   { label: 'Payments', href: '/payments', icon: CreditCard },
   { label: 'Reports', href: '/reports', icon: BarChart3 },
+  { label: 'Photoshooting Days', href: '/photoshoots', icon: Camera },
   { label: 'Workers', href: '/workers', icon: UserCircle },
   { label: 'Documents', href: '/documents', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },
@@ -44,6 +46,7 @@ const workerNav: NavItem[] = [
   { label: 'Available Tasks', href: '/worker/available-tasks', icon: Star },
   { label: 'My Tasks', href: '/worker/my-tasks', icon: ClipboardList },
   { label: 'Calendar', href: '/worker/calendar', icon: Calendar },
+  { label: 'My Photoshoots', href: '/worker/photoshoots', icon: Camera },
   { label: 'Settings', href: '/worker/settings', icon: Settings },
 ];
 

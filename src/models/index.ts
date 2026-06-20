@@ -10,3 +10,4 @@ export { default as ActivityLog } from './ActivityLog';
 export { default as ContentItem } from './ContentItem';
 export { default as Agreement } from './Agreement';
 export { default as Report } from './Report';
+export { default as PhotoshootSession } from './PhotoshootSession';

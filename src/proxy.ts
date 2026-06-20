@@ -73,7 +73,8 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith('/api/clients') ||
         pathname.startsWith('/api/boards') ||
         pathname.startsWith('/api/content') ||
-        pathname.startsWith('/api/auth');
+        pathname.startsWith('/api/auth') ||
+        pathname.startsWith('/api/photoshoots');
       const isCeoOnlyPath = matchesPath(pathname, CEO_ONLY_PATHS);
 
       if (isCeoOnlyPath) {

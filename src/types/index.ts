@@ -265,3 +265,51 @@ export interface JWTPayload {
   role: UserRole;
   name: string;
 }
+
+// ─── Photoshoot Day Flow ───────────────────────────────────────────────────────
+
+export type PhotoshootStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export type ShotCategory =
+  | 'Food' | 'Product' | 'Interior' | 'Exterior' | 'Staff'
+  | 'Behind the Scenes' | 'Detail Shot' | 'Lifestyle'
+  | 'Video' | 'Reel' | 'Story' | 'Drone' | 'Other';
+
+export interface IShotItem {
+  _id: string;
+  title: string;
+  description?: string;
+  category: ShotCategory;
+  required: boolean;
+  completed: boolean;
+  completedBy?: string | IUser;
+  completedAt?: string;
+  notes?: string;
+  sampleImageUrl?: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  order: number;
+}
+
+export interface IPhotoshootSession {
+  _id: string;
+  clientId: string | IClient;
+  title: string;
+  description?: string;
+  shootDate: string;
+  startTime: string;
+  endTime?: string;
+  location: string;
+  address?: string;
+  assignedWorkers: (string | IUser)[];
+  status: PhotoshootStatus;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  notes?: string;
+  equipmentNeeded: string[];
+  clientContactName?: string;
+  clientContactPhone?: string;
+  shotList: IShotItem[];
+  createdBy: string | IUser;
+  isDemo?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
