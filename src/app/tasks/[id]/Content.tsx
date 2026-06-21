@@ -7,11 +7,21 @@ import { TaskStatusBadge, ContentTypeBadge, PriorityBadge, PlatformBadge } from 
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate, getTaskStatusLabel, CARD_STATUSES, LINK_TYPES } from '@/lib/utils';
 import { getEffectiveReportStatus } from '@/lib/reporting';
-import type { ITask, IClient, IUser, IBoard, TaskStatus, IMetrics } from '@/types';
+import type { ITask, IClient, IUser, IBoard, TaskStatus, IMetrics, IPostedLink, PostedLinkPlatform } from '@/types';
 import {
   ArrowLeft, Send, CheckCircle, Check, AlertCircle, Link2, MessageSquare,
   BarChart2, Plus, X, ExternalLink, Clock, CheckCircle2, AlertTriangle, Edit2,
+  Globe,
 } from 'lucide-react';
+
+const POSTED_LINK_PLATFORMS: PostedLinkPlatform[] = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Website', 'Other'];
+
+function platformIcon(platform: PostedLinkPlatform): string {
+  const icons: Record<PostedLinkPlatform, string> = {
+    Instagram: '📸', Facebook: '👥', TikTok: '🎵', YouTube: '▶️', Website: '🌐', Other: '🔗',
+  };
+  return icons[platform] ?? '🔗';
+}
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -59,6 +69,12 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
   const [reportEditing, setReportEditing] = useState(false);
   const [metricsForm, setMetricsForm] = useState<Partial<IMetrics>>({});
   const [savingReport, setSavingReport] = useState(false);
+  const [newPostedLink, setNewPostedLink] = useState<{ platform: PostedLinkPlatform; url: string }>({ platform: 'Instagram', url: '' });
+  const [showPostedLinkForm, setShowPostedLinkForm] = useState(false);
+  const [postedLinkError, setPostedLinkError] = useState('');
+  const [savingPostedLink, setSavingPostedLink] = useState(false);
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editLinkData, setEditLinkData] = useState<{ platform: PostedLinkPlatform; url: string }>({ platform: 'Instagram', url: '' });
 
   useEffect(() => {
     async function load() {
@@ -170,6 +186,51 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
     } finally {
       setSavingReport(false);
     }
+  }
+
+  async function addPostedLink(e: React.FormEvent) {
+    e.preventDefault();
+    setPostedLinkError('');
+    setSavingPostedLink(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}/posted-links`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', platform: newPostedLink.platform, url: newPostedLink.url }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTask(data.task);
+        setNewPostedLink({ platform: 'Instagram', url: '' });
+        setShowPostedLinkForm(false);
+        toast.success('Post link added');
+      } else {
+        setPostedLinkError(data.error ?? 'Failed to add link');
+      }
+    } finally {
+      setSavingPostedLink(false);
+    }
+  }
+
+  async function deletePostedLink(linkId: string) {
+    const res = await fetch(`/api/tasks/${id}/posted-links`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', linkId }),
+    });
+    const data = await res.json();
+    if (res.ok) { setTask(data.task); toast.success('Link removed'); }
+    else toast.error(data.error);
+  }
+
+  async function saveEditLink(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingLinkId) return;
+    const res = await fetch(`/api/tasks/${id}/posted-links`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'edit', linkId: editingLinkId, platform: editLinkData.platform, url: editLinkData.url }),
+    });
+    const data = await res.json();
+    if (res.ok) { setTask(data.task); setEditingLinkId(null); toast.success('Link updated'); }
+    else toast.error(data.error);
   }
 
   if (loading) return <div className="flex-1 flex items-center justify-center"><LoadingSpinner size={32} /></div>;
@@ -356,6 +417,116 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                 <Button type="submit" loading={posting} size="sm"><Send size={13} /></Button>
               </form>
             </div>
+
+            {/* ─── PUBLISHED POST LINKS ────────────────────────────────────────── */}
+            {task.status === 'POSTED' && (
+              <div className="rounded-xl border-2 p-4"
+                style={{ background: 'var(--bg-card)', borderColor: 'rgba(99,102,241,0.3)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                    <Globe size={13} className="text-indigo-400" />Published Post Links
+                  </p>
+                  {canEdit && !showPostedLinkForm && (
+                    <button
+                      onClick={() => { setShowPostedLinkForm(true); setPostedLinkError(''); }}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+                      <Plus size={11} />Add Link
+                    </button>
+                  )}
+                </div>
+
+                {showPostedLinkForm && (
+                  <form onSubmit={addPostedLink} className="mb-3 p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={newPostedLink.platform}
+                        onChange={e => setNewPostedLink(p => ({ ...p, platform: e.target.value as PostedLinkPlatform }))}
+                        className="px-2 py-1.5 rounded text-xs border"
+                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                        {POSTED_LINK_PLATFORMS.map(pl => <option key={pl} value={pl}>{pl}</option>)}
+                      </select>
+                      <div />
+                    </div>
+                    <input
+                      type="url"
+                      value={newPostedLink.url}
+                      onChange={e => { setNewPostedLink(p => ({ ...p, url: e.target.value })); setPostedLinkError(''); }}
+                      placeholder="https://www.instagram.com/p/..."
+                      required
+                      className="w-full px-2 py-1.5 rounded text-xs border"
+                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                    />
+                    {postedLinkError && <p className="text-xs text-red-400">{postedLinkError}</p>}
+                    <div className="flex gap-2">
+                      <Button size="sm" type="submit" loading={savingPostedLink}>Save Link</Button>
+                      <Button size="sm" variant="secondary" type="button" onClick={() => { setShowPostedLinkForm(false); setPostedLinkError(''); }}>Cancel</Button>
+                    </div>
+                  </form>
+                )}
+
+                {(task.postedLinks ?? []).length === 0 && !showPostedLinkForm && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <AlertTriangle size={12} className="text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300">No published post link added yet.</p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {(task.postedLinks ?? []).map((lnk: IPostedLink) => (
+                    <div key={lnk._id}>
+                      {editingLinkId === lnk._id ? (
+                        <form onSubmit={saveEditLink} className="p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                          <select
+                            value={editLinkData.platform}
+                            onChange={e => setEditLinkData(p => ({ ...p, platform: e.target.value as PostedLinkPlatform }))}
+                            className="w-full px-2 py-1.5 rounded text-xs border"
+                            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                            {POSTED_LINK_PLATFORMS.map(pl => <option key={pl} value={pl}>{pl}</option>)}
+                          </select>
+                          <input
+                            type="url"
+                            value={editLinkData.url}
+                            onChange={e => setEditLinkData(p => ({ ...p, url: e.target.value }))}
+                            required
+                            className="w-full px-2 py-1.5 rounded text-xs border"
+                            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" type="submit">Save</Button>
+                            <Button size="sm" variant="secondary" type="button" onClick={() => setEditingLinkId(null)}>Cancel</Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
+                          style={{ background: 'var(--bg-elevated)' }}>
+                          <a href={lnk.url} target="_blank" rel="noopener"
+                            className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                            <span>{platformIcon(lnk.platform)}</span>
+                            <span className="font-semibold">{lnk.platform}</span>
+                            <span className="opacity-60 truncate">— View Post</span>
+                            <ExternalLink size={9} />
+                          </a>
+                          {isCEO && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button onClick={() => { setEditingLinkId(lnk._id); setEditLinkData({ platform: lnk.platform, url: lnk.url }); }}
+                                className="text-xs opacity-50 hover:opacity-100 transition-opacity">
+                                <Edit2 size={11} />
+                              </button>
+                              <button onClick={() => deletePostedLink(lnk._id)}
+                                className="text-xs opacity-50 hover:opacity-100 transition-opacity text-red-400">
+                                <X size={11} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ─── PERFORMANCE REPORT SECTION ─────────────────────────────────── */}
             {showReport && (

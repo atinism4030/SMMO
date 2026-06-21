@@ -6,12 +6,14 @@ import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
   ArrowLeft, FileDown, CheckCircle2, AlertTriangle, Eye,
-  Heart, MessageCircle, Share2, Bookmark, TrendingUp, ExternalLink,
+  Heart, MessageCircle, Share2, Bookmark, ExternalLink, Globe, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { IClient, IBoard, ITask } from '@/types';
+import type { IClient, IBoard, ITask, IPostedLink } from '@/types';
 import type { PDFTask } from '@/lib/generateBoardPDF';
+import type { PdfLang } from '@/lib/pdfTranslations';
+import { LANG_LABELS } from '@/lib/pdfTranslations';
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -39,6 +41,8 @@ export default function BoardReportContent({
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showLangModal, setShowLangModal] = useState(false);
+  const [selectedLang, setSelectedLang] = useState<PdfLang>('en');
   const router = useRouter();
 
   useEffect(() => {
@@ -75,8 +79,9 @@ export default function BoardReportContent({
     (b.postedDate ? new Date(b.postedDate).getTime() : 0)
   );
 
-  async function handlePDF() {
+  async function handleGeneratePDF(lang: PdfLang) {
     if (!client || !board) return;
+    setShowLangModal(false);
     setPdfLoading(true);
     try {
       const { generateBoardPDF } = await import('@/lib/generateBoardPDF');
@@ -94,12 +99,19 @@ export default function BoardReportContent({
               metrics: t.reporting.metrics,
             }
           : undefined,
+        postedLinks: t.postedLinks,
+        primaryPostUrl: t.primaryPostUrl,
       }));
       await generateBoardPDF(
         { name: client.name },
         { title: board.title, month: board.month, year: board.year },
-        pdfTasks
+        pdfTasks,
+        lang
       );
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      alert(`PDF report could not be generated.\n\n${message}`);
     } finally {
       setPdfLoading(false);
     }
@@ -117,13 +129,57 @@ export default function BoardReportContent({
             <Link href={`/reports/${clientId}/${monthYear}`}>
               <Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button>
             </Link>
-            <Button onClick={handlePDF} disabled={pdfLoading} size="sm">
+            <Button onClick={() => setShowLangModal(true)} disabled={pdfLoading} size="sm">
               {pdfLoading ? <LoadingSpinner size={13} /> : <FileDown size={13} />}
               {pdfLoading ? 'Generating…' : 'Generate PDF'}
             </Button>
           </div>
         }
       />
+
+      {/* Language selector modal */}
+      {showLangModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl border w-full max-w-sm p-6 space-y-5"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Generate PDF Report</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Choose the report language</p>
+              </div>
+              <button onClick={() => setShowLangModal(false)} className="opacity-50 hover:opacity-100">
+                <X size={16} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {(Object.entries(LANG_LABELS) as [PdfLang, string][]).map(([code, label]) => (
+                <button
+                  key={code}
+                  onClick={() => setSelectedLang(code)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left"
+                  style={selectedLang === code
+                    ? { background: 'rgba(99,102,241,0.15)', borderColor: '#6366f1', color: '#a5b4fc' }
+                    : { background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+                  }
+                >
+                  <span className="text-sm font-medium">{label}</span>
+                  {selectedLang === code && <CheckCircle2 size={15} className="text-indigo-400" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <Button variant="secondary" onClick={() => setShowLangModal(false)} className="flex-1">Cancel</Button>
+              <Button onClick={() => handleGeneratePDF(selectedLang)} className="flex-1">
+                <FileDown size={13} />Generate PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         {/* Summary stats */}
@@ -152,10 +208,10 @@ export default function BoardReportContent({
           ) : (
             <div className="rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[900px]">
+                <table className="w-full text-sm min-w-[1000px]">
                   <thead>
                     <tr style={{ background: 'var(--bg-elevated)' }}>
-                      {['Title','Type','Platform','Posted Date','Views','Reach','Likes','Comments','Shares','Saves','Eng. Rate','Notes'].map(h => (
+                      {['Title','Type','Platform','Posted Date','Views','Reach','Likes','Comments','Shares','Saves','Eng. Rate','Post Link','Notes'].map(h => (
                         <th key={h} className="text-left px-3 py-2.5 text-xs font-semibold whitespace-nowrap"
                           style={{ color: 'var(--text-muted)' }}>
                           {h}
@@ -167,6 +223,7 @@ export default function BoardReportContent({
                     {sortedPosted.map((task, idx) => {
                       const m = task.reporting?.metrics;
                       const hm = !!m && (m.views !== undefined || m.reach !== undefined || m.likes !== undefined);
+                      const links = task.postedLinks ?? [];
                       return (
                         <tr
                           key={String(task._id)}
@@ -199,6 +256,29 @@ export default function BoardReportContent({
                           <td className="px-3 py-2.5 text-xs whitespace-nowrap font-semibold"
                             style={{ color: hm && m?.engagementRate !== undefined ? '#6366f1' : 'var(--text-muted)' }}>
                             {hm ? fmtPct(m?.engagementRate) : '—'}
+                          </td>
+                          {/* Post links cell */}
+                          <td className="px-3 py-2.5">
+                            {links.length === 0 ? (
+                              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {links.map((lnk: IPostedLink) => (
+                                  <a
+                                    key={lnk._id}
+                                    href={lnk.url}
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-colors hover:opacity-80"
+                                    style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
+                                  >
+                                    <Globe size={9} />
+                                    {lnk.platform}
+                                    <ExternalLink size={8} />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </td>
                           <td className="px-3 py-2.5 text-xs max-w-[120px]" style={{ color: 'var(--text-muted)' }}>
                             <span className="block truncate">{hm ? (m?.notes || '—') : '—'}</span>

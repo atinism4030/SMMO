@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { IClient, IUser } from '@/types';
-import { SHOT_TEMPLATES, EQUIPMENT_OPTIONS, CATEGORY_COLORS, type ShotTemplateItem } from '@/lib/shotTemplates';
+import { EQUIPMENT_OPTIONS, CATEGORY_COLORS, type ShotTemplateItem } from '@/lib/shotTemplates';
 import { ArrowLeft, Plus, X, Camera, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -57,14 +57,6 @@ export default function NewPhotoshootContent() {
       setWorkers(wd.users ?? []);
     });
   }, []);
-
-  function applyTemplate(key: string) {
-    const tpl = SHOT_TEMPLATES[key];
-    if (!tpl) return;
-    const newShots = tpl.shots.map((s, i): ShotDraft => ({ ...s, id: newId(), order: i }));
-    setShots(newShots);
-    toast.success(`Applied template: ${tpl.label}`);
-  }
 
   function addShot() {
     setShots(prev => [...prev, { ...BLANK_SHOT(), order: prev.length }]);
@@ -248,33 +240,18 @@ export default function NewPhotoshootContent() {
               </button>
             }
           >
-            {/* Template picker */}
-            <div className="mb-4">
-              <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Load template:</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(SHOT_TEMPLATES).map(([key, tpl]) => (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => applyTemplate(key)}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:border-indigo-500"
-                    style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
-                  >
-                    {tpl.label}
-                  </button>
-                ))}
-                {shots.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShots([])}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
-                    style={{ color: '#f87171', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}
-                  >
-                    Clear all
-                  </button>
-                )}
+            {shots.length > 0 && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShots([])}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
+                  style={{ color: '#f87171', borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}
+                >
+                  Clear all shots
+                </button>
               </div>
-            </div>
+            )}
 
             {showShots && (
               <div className="space-y-2">

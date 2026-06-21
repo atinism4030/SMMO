@@ -9,11 +9,21 @@ import { TaskStatusBadge, ContentTypeBadge, PriorityBadge, PlatformBadge } from 
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate, getTaskStatusLabel, CARD_STATUSES, LINK_TYPES } from '@/lib/utils';
 import { getEffectiveReportStatus } from '@/lib/reporting';
-import type { ITask, IClient, IUser, TaskStatus } from '@/types';
+import type { ITask, IClient, IUser, TaskStatus, IPostedLink, PostedLinkPlatform } from '@/types';
 import {
   ArrowLeft, Send, CheckCircle, Check, Link2, MessageSquare,
   Plus, X, ExternalLink, BarChart2, Clock, AlertTriangle, CheckCircle2,
+  Globe,
 } from 'lucide-react';
+
+const POSTED_LINK_PLATFORMS: PostedLinkPlatform[] = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Website', 'Other'];
+
+function platformIcon(platform: PostedLinkPlatform): string {
+  const icons: Record<PostedLinkPlatform, string> = {
+    Instagram: '📸', Facebook: '👥', TikTok: '🎵', YouTube: '▶️', Website: '🌐', Other: '🔗',
+  };
+  return icons[platform] ?? '🔗';
+}
 import toast from 'react-hot-toast';
 
 const POST_REEL_FIELDS = [
@@ -54,6 +64,10 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
   const [newLink, setNewLink] = useState({ label: '', url: '', type: '' });
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [newPostedLink, setNewPostedLink] = useState<{ platform: PostedLinkPlatform; url: string }>({ platform: 'Instagram', url: '' });
+  const [showPostedLinkForm, setShowPostedLinkForm] = useState(false);
+  const [postedLinkError, setPostedLinkError] = useState('');
+  const [savingPostedLink, setSavingPostedLink] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -118,6 +132,29 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
     });
     const data = await res.json();
     if (res.ok) { setTask(data.task); setNewLink({ label: '', url: '', type: '' }); setShowLinkForm(false); toast.success('Link added'); }
+  }
+
+  async function addPostedLink(e: React.FormEvent) {
+    e.preventDefault();
+    setPostedLinkError('');
+    setSavingPostedLink(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}/posted-links`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', platform: newPostedLink.platform, url: newPostedLink.url }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTask(data.task);
+        setNewPostedLink({ platform: 'Instagram', url: '' });
+        setShowPostedLinkForm(false);
+        toast.success('Post link added');
+      } else {
+        setPostedLinkError(data.error ?? 'Failed to add link');
+      }
+    } finally {
+      setSavingPostedLink(false);
+    }
   }
 
   async function removeLink(index: number) {
@@ -307,6 +344,75 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                 <Button type="submit" loading={posting} size="sm"><Send size={13} /></Button>
               </form>
             </div>
+
+            {/* Published Post Links — workers can add if assigned/claimed */}
+            {task.status === 'POSTED' && (
+              <div className="rounded-xl border-2 p-4"
+                style={{ background: 'var(--bg-card)', borderColor: 'rgba(99,102,241,0.3)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                    <Globe size={13} className="text-indigo-400" />Published Post Links
+                  </p>
+                  {myTask && !showPostedLinkForm && (
+                    <button
+                      onClick={() => { setShowPostedLinkForm(true); setPostedLinkError(''); }}
+                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+                      <Plus size={11} />Add Link
+                    </button>
+                  )}
+                </div>
+
+                {showPostedLinkForm && (
+                  <form onSubmit={addPostedLink} className="mb-3 p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                    <select
+                      value={newPostedLink.platform}
+                      onChange={e => setNewPostedLink(p => ({ ...p, platform: e.target.value as PostedLinkPlatform }))}
+                      className="w-full px-2 py-1.5 rounded text-xs border"
+                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                      {POSTED_LINK_PLATFORMS.map(pl => <option key={pl} value={pl}>{pl}</option>)}
+                    </select>
+                    <input
+                      type="url"
+                      value={newPostedLink.url}
+                      onChange={e => { setNewPostedLink(p => ({ ...p, url: e.target.value })); setPostedLinkError(''); }}
+                      placeholder="https://www.instagram.com/p/..."
+                      required
+                      className="w-full px-2 py-1.5 rounded text-xs border"
+                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                    />
+                    {postedLinkError && <p className="text-xs text-red-400">{postedLinkError}</p>}
+                    <div className="flex gap-2">
+                      <Button size="sm" type="submit" loading={savingPostedLink}>Save Link</Button>
+                      <Button size="sm" variant="secondary" type="button" onClick={() => { setShowPostedLinkForm(false); setPostedLinkError(''); }}>Cancel</Button>
+                    </div>
+                  </form>
+                )}
+
+                {(task.postedLinks ?? []).length === 0 && !showPostedLinkForm && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <AlertTriangle size={12} className="text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300">No published post link added yet.</p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {(task.postedLinks ?? []).map((lnk: IPostedLink) => (
+                    <div key={lnk._id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
+                      style={{ background: 'var(--bg-elevated)' }}>
+                      <a href={lnk.url} target="_blank" rel="noopener"
+                        className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                        <span>{platformIcon(lnk.platform)}</span>
+                        <span className="font-semibold">{lnk.platform}</span>
+                        <span className="opacity-60">— View Post</span>
+                        <ExternalLink size={9} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Performance Report — read-only for workers */}
             {showReport && (

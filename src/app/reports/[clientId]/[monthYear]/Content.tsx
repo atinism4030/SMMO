@@ -106,6 +106,10 @@ export default function MonthBoardsContent({ params }: { params: Promise<{ clien
         { title: board.title, month: board.month, year: board.year },
         pdfTasks
       );
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      alert(`PDF report could not be generated.\n\n${message}`);
     } finally {
       setPdfLoading(null);
     }
