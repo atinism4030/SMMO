@@ -3,7 +3,6 @@
 import { useState, useEffect, use } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import Button from '@/components/ui/Button';
-import { TaskStatusBadge, ContentTypeBadge, PriorityBadge, PlatformBadge } from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate, getTaskStatusLabel, CARD_STATUSES, LINK_TYPES } from '@/lib/utils';
 import { getEffectiveReportStatus } from '@/lib/reporting';
@@ -46,6 +45,15 @@ const STORY_FIELDS = [
   { key: 'linkClicks',        label: 'Link Clicks' },
 ];
 
+const STATUS_SHORT: Record<string, string> = {
+  CONTENT_PREPARATION: 'In Preparation',
+  QUALITY_ASSURANCE: 'Quality Assurance',
+  POST_VERIFIED: 'Post Verified',
+  READY_TO_POST: 'Ready to Post',
+  POSTED: 'Posted',
+  NEEDS_FIX: 'Needs Fix',
+};
+
 function formatCountdown(dueAt: string): string {
   const diff = new Date(dueAt).getTime() - Date.now();
   if (diff <= 0) return 'overdue';
@@ -65,7 +73,6 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
   const [userId, setUserId] = useState<string>('');
   const [newLink, setNewLink] = useState({ label: '', url: '', type: '' });
   const [showLinkForm, setShowLinkForm] = useState(false);
-  // reportEditing: true = form visible, false = read-only view
   const [reportEditing, setReportEditing] = useState(false);
   const [metricsForm, setMetricsForm] = useState<Partial<IMetrics>>({});
   const [savingReport, setSavingReport] = useState(false);
@@ -233,8 +240,8 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
     else toast.error(data.error);
   }
 
-  if (loading) return <div className="flex-1 flex items-center justify-center"><LoadingSpinner size={32} /></div>;
-  if (!task) return <div className="p-6 text-red-400">Card not found.</div>;
+  if (loading) return <div className="flex-1 flex items-center justify-center" style={{ background: '#f8f8f8' }}><LoadingSpinner size={32} /></div>;
+  if (!task) return <div className="p-6 text-red-500" style={{ background: '#f8f8f8' }}>Card not found.</div>;
 
   const client = task.clientId as IClient;
   const board = task.boardId as IBoard;
@@ -259,9 +266,11 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
   const isStory = task.contentType === 'STORY';
   const metricFields = isStory ? STORY_FIELDS : POST_REEL_FIELDS;
   const metrics = task.reporting?.metrics;
-  // Show the input form when: CEO AND (not completed OR explicitly editing)
   const showForm = isCEO && (effectiveStatus !== 'COMPLETED' || reportEditing);
   const showReadOnly = effectiveStatus === 'COMPLETED' && !reportEditing;
+
+  const inputStyle = { background: '#ffffff', borderColor: '#e5e5e5', color: '#111111' };
+  const cardStyle = { background: '#ffffff', borderColor: '#e5e5e5' };
 
   return (
     <>
@@ -275,52 +284,72 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
           </div>
         }
       />
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
+      <div className="flex-1 overflow-y-auto" style={{ background: '#f8f8f8' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 min-h-full">
 
           {/* Main content */}
-          <div className="lg:col-span-2 p-6 space-y-5 border-r" style={{ borderColor: 'var(--border)' }}>
+          <div className="lg:col-span-2 p-4 sm:p-6 space-y-4 border-r border-gray-200">
 
-            {/* Badges */}
+            {/* Status + type badges */}
             <div className="flex flex-wrap items-center gap-2">
-              <TaskStatusBadge status={task.status} />
-              <ContentTypeBadge type={task.contentType} />
-              <PriorityBadge priority={task.priority} />
-              {(task.platforms ?? []).map(p => <PlatformBadge key={p} platform={p} />)}
+              <span className="text-xs font-medium px-3 py-1 rounded-full border border-gray-200 bg-white text-gray-700">
+                {STATUS_SHORT[task.status] ?? task.status}
+              </span>
+              {task.contentType && (
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                  {task.contentType}
+                </span>
+              )}
+              {task.priority && (
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                  {task.priority}
+                </span>
+              )}
+              {(task.platforms ?? []).map(p => (
+                <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p}</span>
+              ))}
               {task.isOpenForClaim && !task.claimedBy && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Open for Claim</span>
+                <span className="text-xs px-2 py-0.5 rounded-full border border-gray-200 text-gray-500">Open for Claim</span>
               )}
             </div>
 
             {/* Description */}
             {task.description && (
-              <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Description</p>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{task.description}</p>
+              <div className="rounded-xl border p-4" style={cardStyle}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Description</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">{task.description}</p>
               </div>
             )}
 
             {/* Checklist */}
             {checklist.length > 0 && (
-              <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+              <div className="rounded-xl border p-4" style={cardStyle}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Production Checklist</p>
-                  <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{doneCount}/{checklist.length}</span>
+                  <p className="text-sm font-semibold text-gray-900">Production Checklist</p>
+                  <span className="text-xs font-medium text-gray-400">{doneCount}/{checklist.length}</span>
                 </div>
-                <div className="h-1.5 rounded-full mb-4" style={{ background: 'var(--bg-elevated)' }}>
-                  <div className="h-1.5 rounded-full bg-emerald-500 transition-all"
-                    style={{ width: `${checklist.length ? (doneCount / checklist.length) * 100 : 0}%` }} />
+                <div className="h-1.5 rounded-full bg-gray-100 mb-4">
+                  <div
+                    className="h-1.5 rounded-full bg-gray-900 transition-all"
+                    style={{ width: `${checklist.length ? (doneCount / checklist.length) * 100 : 0}%` }}
+                  />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {checklist.map((item, i) => (
-                    <div key={i}
+                    <div
+                      key={i}
                       onClick={() => canEdit && toggleChecklist(i)}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${canEdit ? 'cursor-pointer hover:bg-white/5' : ''}`}>
-                      <div className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-colors ${item.done ? 'bg-emerald-500' : 'border'}`}
-                        style={!item.done ? { borderColor: 'var(--border)' } : {}}>
-                        {item.done && <Check size={10} className="text-white" />}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-3 transition-colors ${canEdit ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : ''}`}>
+                      <div
+                        className={`w-5 h-5 rounded shrink-0 flex items-center justify-center transition-colors border ${item.done ? 'bg-gray-900 border-gray-900' : 'border-gray-300 bg-white'}`}>
+                        {item.done && <Check size={11} className="text-white" />}
                       </div>
-                      <span className="text-sm" style={{ color: item.done ? 'var(--text-muted)' : 'var(--text-secondary)', textDecoration: item.done ? 'line-through' : 'none' }}>
+                      <span
+                        className="text-sm"
+                        style={{
+                          color: item.done ? '#aaaaaa' : '#333333',
+                          textDecoration: item.done ? 'line-through' : 'none',
+                        }}>
                         {item.text}
                       </span>
                     </div>
@@ -330,52 +359,62 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
             )}
 
             {/* Links */}
-            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <div className="rounded-xl border p-4" style={cardStyle}>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                  <Link2 size={13} />Links & Files
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                  <Link2 size={14} />Links & Files
                 </p>
                 {canEdit && (
-                  <button onClick={() => setShowLinkForm(p => !p)}
-                    className="text-xs px-2 py-1 rounded flex items-center gap-1 transition-colors hover:bg-white/10"
-                    style={{ color: 'var(--text-muted)' }}>
+                  <button
+                    onClick={() => setShowLinkForm(p => !p)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex items-center gap-1">
                     <Plus size={11} />{showLinkForm ? 'Cancel' : 'Add Link'}
                   </button>
                 )}
               </div>
               {showLinkForm && (
-                <form onSubmit={addLink} className="mb-3 p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                <form onSubmit={addLink} className="mb-3 p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <input value={newLink.label} onChange={e => setNewLink(p => ({ ...p, label: e.target.value }))}
+                    <input
+                      value={newLink.label}
+                      onChange={e => setNewLink(p => ({ ...p, label: e.target.value }))}
                       placeholder="Label *" required
-                      className="px-2 py-1.5 rounded text-xs border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
-                    <select value={newLink.type} onChange={e => setNewLink(p => ({ ...p, type: e.target.value }))}
-                      className="px-2 py-1.5 rounded text-xs border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                      className="px-2 py-2 rounded-lg text-sm border bg-white text-gray-900"
+                      style={{ borderColor: '#e5e5e5' }}
+                    />
+                    <select
+                      value={newLink.type}
+                      onChange={e => setNewLink(p => ({ ...p, type: e.target.value }))}
+                      className="px-2 py-2 rounded-lg text-sm border bg-white text-gray-700"
+                      style={{ borderColor: '#e5e5e5' }}>
                       <option value="">— Type —</option>
                       {LINK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
-                  <input value={newLink.url} onChange={e => setNewLink(p => ({ ...p, url: e.target.value }))}
+                  <input
+                    value={newLink.url}
+                    onChange={e => setNewLink(p => ({ ...p, url: e.target.value }))}
                     placeholder="URL *" required type="url"
-                    className="w-full px-2 py-1.5 rounded text-xs border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                    className="w-full px-2 py-2 rounded-lg text-sm border bg-white text-gray-900"
+                    style={{ borderColor: '#e5e5e5' }}
+                  />
                   <Button size="sm" type="submit">Save Link</Button>
                 </form>
               )}
               {(task.links ?? []).length === 0 && !showLinkForm && (
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No links yet.</p>
+                <p className="text-xs text-gray-400">No links yet.</p>
               )}
               <div className="space-y-2">
                 {(task.links ?? []).map((lnk, i) => (
-                  <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
-                    style={{ background: 'var(--bg-elevated)' }}>
+                  <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 bg-gray-50 border border-gray-100">
                     <a href={lnk.url} target="_blank" rel="noopener"
-                      className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
-                      <ExternalLink size={11} />
+                      className="flex items-center gap-2 text-xs text-gray-700 hover:text-gray-900 truncate">
+                      <ExternalLink size={11} className="text-gray-400" />
                       <span className="font-medium">{lnk.label}</span>
-                      {lnk.type && <span className="text-xs opacity-60">· {lnk.type}</span>}
+                      {lnk.type && <span className="text-gray-400">· {lnk.type}</span>}
                     </a>
                     {canEdit && (
-                      <button onClick={() => removeLink(i)} className="text-xs opacity-40 hover:opacity-100 transition-opacity shrink-0">
+                      <button onClick={() => removeLink(i)} className="text-gray-300 hover:text-gray-600 transition-colors shrink-0">
                         <X size={12} />
                       </button>
                     )}
@@ -385,65 +424,66 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Comments */}
-            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <p className="text-xs font-semibold mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                <MessageSquare size={13} />Comments ({(task.comments ?? []).length})
+            <div className="rounded-xl border p-4" style={cardStyle}>
+              <p className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                <MessageSquare size={14} />Comments ({(task.comments ?? []).length})
               </p>
               <div className="space-y-3 mb-4">
-                {(task.comments ?? []).length === 0 && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No comments yet.</p>}
+                {(task.comments ?? []).length === 0 && <p className="text-xs text-gray-400">No comments yet.</p>}
                 {(task.comments ?? []).map((c, i) => {
                   const user = c.userId as IUser;
                   return (
                     <div key={i} className="flex gap-3">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                      <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-xs font-bold text-white shrink-0">
                         {user?.name?.charAt(0) ?? 'U'}
                       </div>
-                      <div className="flex-1 rounded-lg px-3 py-2" style={{ background: 'var(--bg-elevated)' }}>
+                      <div className="flex-1 rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-100">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{user?.name ?? 'User'}</span>
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(c.createdAt)}</span>
+                          <span className="text-xs font-semibold text-gray-900">{user?.name ?? 'User'}</span>
+                          <span className="text-xs text-gray-400">{formatDate(c.createdAt)}</span>
                         </div>
-                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{c.text}</p>
+                        <p className="text-sm text-gray-700">{c.text}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
               <form onSubmit={handleComment} className="flex gap-2">
-                <input value={comment} onChange={e => setComment(e.target.value)} placeholder="Add a comment..."
-                  className="flex-1 px-3 py-2 rounded-lg text-sm border"
-                  style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <input
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="flex-1 px-3 py-2.5 rounded-xl text-sm border bg-gray-50 text-gray-900"
+                  style={{ borderColor: '#e5e5e5' }}
+                />
                 <Button type="submit" loading={posting} size="sm"><Send size={13} /></Button>
               </form>
             </div>
 
-            {/* ─── PUBLISHED POST LINKS ────────────────────────────────────────── */}
+            {/* Published Post Links */}
             {task.status === 'POSTED' && (
-              <div className="rounded-xl border-2 p-4"
-                style={{ background: 'var(--bg-card)', borderColor: 'rgba(99,102,241,0.3)' }}>
+              <div className="rounded-xl border-2 p-4" style={{ background: '#ffffff', borderColor: '#111111' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                    <Globe size={13} className="text-indigo-400" />Published Post Links
+                  <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                    <Globe size={14} />Published Post Links
                   </p>
                   {canEdit && !showPostedLinkForm && (
                     <button
                       onClick={() => { setShowPostedLinkForm(true); setPostedLinkError(''); }}
-                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors"
-                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+                      className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                       <Plus size={11} />Add Link
                     </button>
                   )}
                 </div>
 
                 {showPostedLinkForm && (
-                  <form onSubmit={addPostedLink} className="mb-3 p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                  <form onSubmit={addPostedLink} className="mb-3 p-3 rounded-lg bg-gray-50 border border-gray-100 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={newPostedLink.platform}
                         onChange={e => setNewPostedLink(p => ({ ...p, platform: e.target.value as PostedLinkPlatform }))}
-                        className="px-2 py-1.5 rounded text-xs border"
-                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                        className="px-2 py-2 rounded-lg text-sm border bg-white text-gray-700"
+                        style={{ borderColor: '#e5e5e5' }}>
                         {POSTED_LINK_PLATFORMS.map(pl => <option key={pl} value={pl}>{pl}</option>)}
                       </select>
                       <div />
@@ -454,10 +494,10 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                       onChange={e => { setNewPostedLink(p => ({ ...p, url: e.target.value })); setPostedLinkError(''); }}
                       placeholder="https://www.instagram.com/p/..."
                       required
-                      className="w-full px-2 py-1.5 rounded text-xs border"
-                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                      className="w-full px-2 py-2 rounded-lg text-sm border bg-white text-gray-900"
+                      style={{ borderColor: '#e5e5e5' }}
                     />
-                    {postedLinkError && <p className="text-xs text-red-400">{postedLinkError}</p>}
+                    {postedLinkError && <p className="text-xs text-red-500">{postedLinkError}</p>}
                     <div className="flex gap-2">
                       <Button size="sm" type="submit" loading={savingPostedLink}>Save Link</Button>
                       <Button size="sm" variant="secondary" type="button" onClick={() => { setShowPostedLinkForm(false); setPostedLinkError(''); }}>Cancel</Button>
@@ -466,10 +506,9 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                 )}
 
                 {(task.postedLinks ?? []).length === 0 && !showPostedLinkForm && (
-                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                    <AlertTriangle size={12} className="text-amber-400 shrink-0" />
-                    <p className="text-xs text-amber-300">No published post link added yet.</p>
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700">
+                    <AlertTriangle size={12} className="text-zinc-500 shrink-0" />
+                    <p className="text-xs text-zinc-400">No published post link added yet.</p>
                   </div>
                 )}
 
@@ -477,12 +516,12 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                   {(task.postedLinks ?? []).map((lnk: IPostedLink) => (
                     <div key={lnk._id}>
                       {editingLinkId === lnk._id ? (
-                        <form onSubmit={saveEditLink} className="p-3 rounded-lg space-y-2" style={{ background: 'var(--bg-elevated)' }}>
+                        <form onSubmit={saveEditLink} className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
                           <select
                             value={editLinkData.platform}
                             onChange={e => setEditLinkData(p => ({ ...p, platform: e.target.value as PostedLinkPlatform }))}
-                            className="w-full px-2 py-1.5 rounded text-xs border"
-                            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                            className="w-full px-2 py-2 rounded-lg text-sm border"
+                            style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
                             {POSTED_LINK_PLATFORMS.map(pl => <option key={pl} value={pl}>{pl}</option>)}
                           </select>
                           <input
@@ -490,8 +529,8 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                             value={editLinkData.url}
                             onChange={e => setEditLinkData(p => ({ ...p, url: e.target.value }))}
                             required
-                            className="w-full px-2 py-1.5 rounded text-xs border"
-                            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                            className="w-full px-2 py-2 rounded-lg text-sm border bg-white text-gray-900"
+                            style={{ borderColor: '#e5e5e5' }}
                           />
                           <div className="flex gap-2">
                             <Button size="sm" type="submit">Save</Button>
@@ -499,23 +538,24 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                           </div>
                         </form>
                       ) : (
-                        <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
-                          style={{ background: 'var(--bg-elevated)' }}>
+                        <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 bg-gray-50 border border-gray-100">
                           <a href={lnk.url} target="_blank" rel="noopener"
-                            className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                            className="flex items-center gap-2 text-xs text-gray-700 hover:text-gray-900 truncate">
                             <span>{platformIcon(lnk.platform)}</span>
                             <span className="font-semibold">{lnk.platform}</span>
-                            <span className="opacity-60 truncate">— View Post</span>
+                            <span className="text-gray-400">— View Post</span>
                             <ExternalLink size={9} />
                           </a>
                           {isCEO && (
                             <div className="flex items-center gap-1 shrink-0">
-                              <button onClick={() => { setEditingLinkId(lnk._id); setEditLinkData({ platform: lnk.platform, url: lnk.url }); }}
-                                className="text-xs opacity-50 hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => { setEditingLinkId(lnk._id); setEditLinkData({ platform: lnk.platform, url: lnk.url }); }}
+                                className="text-gray-300 hover:text-gray-600 transition-colors p-1">
                                 <Edit2 size={11} />
                               </button>
-                              <button onClick={() => deletePostedLink(lnk._id)}
-                                className="text-xs opacity-50 hover:opacity-100 transition-opacity text-red-400">
+                              <button
+                                onClick={() => deletePostedLink(lnk._id)}
+                                className="text-gray-300 hover:text-red-500 transition-colors p-1">
                                 <X size={11} />
                               </button>
                             </div>
@@ -528,78 +568,74 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* ─── PERFORMANCE REPORT SECTION ─────────────────────────────────── */}
+            {/* Performance Report */}
             {showReport && (
-              <div className="rounded-xl border-2 p-5"
-                style={{ background: 'var(--bg-card)', borderColor: effectiveStatus === 'COMPLETED' ? 'rgba(16,185,129,0.4)' : effectiveStatus === 'NEEDS_DATA' ? 'rgba(245,158,11,0.4)' : 'var(--border)' }}>
+              <div
+                className="rounded-xl border-2 p-5"
+                style={{
+                  background: '#ffffff',
+                  borderColor: effectiveStatus === 'COMPLETED' ? '#bbf7d0' : effectiveStatus === 'NEEDS_DATA' ? '#fde68a' : '#e5e5e5',
+                }}>
 
-                {/* Section header */}
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                      <BarChart2 size={16} className="text-indigo-400" />
-                      Performance Report
+                    <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <BarChart2 size={16} />Performance Report
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs text-gray-400 mt-0.5">
                       Add views, reach, likes and other metrics after posting.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
                       {isStory ? 'Story' : task.contentType}
                     </span>
                     {isCEO && showReadOnly && (
                       <button
                         onClick={() => { setMetricsForm(metrics ?? {}); setReportEditing(true); }}
-                        className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                        style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
-                        <Edit2 size={11} />Edit Report
+                        className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:bg-zinc-900 transition-colors">
+                        <Edit2 size={11} />Edit
                       </button>
                     )}
                   </div>
                 </div>
 
-                {/* Status banner — informational only, never blocks input */}
                 {effectiveStatus === 'WAITING' && task.reporting?.reportDueAt && (
-                  <div className="flex items-start gap-2.5 px-3 py-3 rounded-lg mb-5"
-                    style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                    <Clock size={14} className="text-blue-400 mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2.5 px-3 py-3 rounded-lg mb-5 bg-zinc-900 border border-zinc-700">
+                    <Clock size={14} className="text-zinc-400 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-blue-300 text-xs font-semibold">Report is not due yet.</p>
-                      <p className="text-blue-200/70 text-xs mt-0.5">
+                      <p className="text-zinc-200 text-xs font-semibold">Report is not due yet.</p>
+                      <p className="text-zinc-400 text-xs mt-0.5">
                         Due: {formatDate(task.reporting.reportDueAt)} ({formatCountdown(task.reporting.reportDueAt)})
                       </p>
-                      <p className="text-blue-200/50 text-xs mt-0.5">You can still add metrics manually if needed.</p>
+                      <p className="text-zinc-600 text-xs mt-0.5">You can still add metrics manually if needed.</p>
                     </div>
                   </div>
                 )}
                 {effectiveStatus === 'NEEDS_DATA' && (
-                  <div className="flex items-center gap-2.5 px-3 py-3 rounded-lg mb-5"
-                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                    <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                  <div className="flex items-center gap-2.5 px-3 py-3 rounded-lg mb-5 bg-zinc-900 border border-zinc-700">
+                    <AlertTriangle size={14} className="text-zinc-400 shrink-0" />
                     <div>
-                      <p className="text-amber-300 text-xs font-semibold">Report data is now due.</p>
-                      <p className="text-amber-200/70 text-xs mt-0.5">
+                      <p className="text-zinc-200 text-xs font-semibold">Report data is now due.</p>
+                      <p className="text-zinc-400 text-xs mt-0.5">
                         Enter the performance metrics below and click <strong>Save Report</strong>.
                       </p>
                     </div>
                   </div>
                 )}
                 {effectiveStatus === 'COMPLETED' && (
-                  <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-5"
-                    style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                    <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                  <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-5 bg-zinc-900 border border-zinc-700">
+                    <CheckCircle2 size={14} className="text-zinc-400 shrink-0" />
                     <div>
-                      <p className="text-emerald-300 text-xs font-semibold">Report completed</p>
+                      <p className="text-zinc-200 text-xs font-semibold">Report completed</p>
                       {task.reporting?.reportCompletedAt && (
-                        <p className="text-emerald-200/60 text-xs">{formatDate(task.reporting.reportCompletedAt)}</p>
+                        <p className="text-zinc-500 text-xs">{formatDate(task.reporting.reportCompletedAt)}</p>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* ── Read-only metrics display ── */}
+                {/* Read-only metrics */}
                 {showReadOnly && metrics && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -607,40 +643,40 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                         const val = (metrics as Record<string, unknown>)[key] as number | undefined;
                         if (val == null) return null;
                         return (
-                          <div key={key} className="rounded-lg p-3 text-center" style={{ background: 'var(--bg-elevated)' }}>
-                            <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{val.toLocaleString()}</p>
-                            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                          <div key={key} className="rounded-xl p-3 text-center bg-zinc-900 border border-zinc-800">
+                            <p className="text-xl font-bold text-white">{val.toLocaleString()}</p>
+                            <p className="text-xs mt-1 text-zinc-500">{label}</p>
                           </div>
                         );
                       })}
                       {!isStory && metrics.engagementRate != null && (
-                        <div className="rounded-lg p-3 text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                          <p className="text-xl font-bold text-emerald-400">{metrics.engagementRate}%</p>
-                          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Engagement</p>
+                        <div className="rounded-xl p-3 text-center bg-zinc-900 border border-zinc-700">
+                          <p className="text-xl font-bold text-white">{metrics.engagementRate}%</p>
+                          <p className="text-xs mt-1 text-zinc-500">Engagement</p>
                         </div>
                       )}
                     </div>
                     {metrics.screenshotUrl && (
                       <a href={metrics.screenshotUrl} target="_blank" rel="noopener"
-                        className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300">
+                        className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white">
                         <ExternalLink size={11} />View Screenshot
                       </a>
                     )}
                     {metrics.notes && (
-                      <div className="p-3 rounded-lg text-sm" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
+                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-400">
                         {metrics.notes}
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* ── Input form (always visible for CEO when not completed) ── */}
+                {/* Input form */}
                 {showForm && (
                   <form onSubmit={saveReport} className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                       {metricFields.map(({ key, label }) => (
                         <div key={key}>
-                          <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+                          <label className="text-xs font-medium mb-1.5 block text-gray-600">{label}</label>
                           <input
                             type="number"
                             min="0"
@@ -650,40 +686,40 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                               ...p,
                               [key]: e.target.value === '' ? undefined : Number(e.target.value),
                             }))}
-                            className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                            style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                            className="w-full px-3 py-2.5 rounded-lg text-sm border bg-white text-gray-900"
+                            style={inputStyle}
                           />
                         </div>
                       ))}
                     </div>
 
                     {!isStory && (
-                      <p className="text-xs px-2 py-1.5 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                      <p className="text-xs px-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-gray-500">
                         Engagement rate = (likes + comments + shares + saves) ÷ reach × 100 — calculated automatically on save.
                       </p>
                     )}
 
                     <div>
-                      <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Screenshot URL</label>
+                      <label className="text-xs font-medium mb-1.5 block text-gray-600">Screenshot URL</label>
                       <input
                         type="url"
                         value={metricsForm.screenshotUrl ?? ''}
                         onChange={e => setMetricsForm(p => ({ ...p, screenshotUrl: e.target.value }))}
                         placeholder="https://drive.google.com/..."
-                        className="w-full px-3 py-2 rounded-lg text-sm border"
-                        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                        className="w-full px-3 py-2.5 rounded-lg text-sm border bg-white text-gray-900"
+                        style={inputStyle}
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Notes</label>
+                      <label className="text-xs font-medium mb-1.5 block text-gray-600">Notes</label>
                       <textarea
                         rows={3}
                         value={metricsForm.notes ?? ''}
                         onChange={e => setMetricsForm(p => ({ ...p, notes: e.target.value }))}
                         placeholder="Any observations about this content's performance..."
-                        className="w-full px-3 py-2 rounded-lg text-sm border resize-none"
-                        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                        className="w-full px-3 py-2.5 rounded-lg text-sm border bg-white text-gray-900 resize-none"
+                        style={inputStyle}
                       />
                     </div>
 
@@ -704,22 +740,25 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Sidebar */}
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-4">
             {canEdit && (
-              <div>
-                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Update Status</p>
-                <select value={task.status} onChange={e => handleStatusChange(e.target.value as TaskStatus)} disabled={updating}
-                  className="w-full px-3 py-2 rounded-lg text-sm border"
-                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+              <div className="rounded-xl border p-4" style={cardStyle}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Update Status</p>
+                <select
+                  value={task.status}
+                  onChange={e => handleStatusChange(e.target.value as TaskStatus)}
+                  disabled={updating}
+                  className="w-full px-3 py-2.5 rounded-lg text-sm border bg-white text-gray-900"
+                  style={{ borderColor: '#e5e5e5' }}>
                   {CARD_STATUSES.map(s => (
-                    <option key={s.value} value={s.value} style={{ background: 'var(--bg-card)' }}>{s.label}</option>
+                    <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                 </select>
               </div>
             )}
 
-            <div className="rounded-xl border p-4 space-y-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Details</p>
+            <div className="rounded-xl border p-4 space-y-3" style={cardStyle}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Details</p>
               {[
                 ['Client', client?.name],
                 ['Board', (board as IBoard)?.title],
@@ -728,37 +767,36 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                 ['Created', formatDate(task.createdAt)],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-2">
-                  <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>{k}</span>
-                  <span className="text-xs font-medium text-right" style={{ color: 'var(--text-secondary)' }}>{v}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{k}</span>
+                  <span className="text-xs font-medium text-gray-700 text-right">{v}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Assignment</p>
+            <div className="rounded-xl border p-4" style={cardStyle}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Assignment</p>
               {assignedWorker && typeof assignedWorker === 'object' ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                  <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-sm font-bold text-white shrink-0">
                     {(assignedWorker as IUser).name?.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{(assignedWorker as IUser).name}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{(assignedWorker as IUser).email}</p>
+                    <p className="text-sm font-semibold text-gray-900">{(assignedWorker as IUser).name}</p>
+                    <p className="text-xs text-gray-400">{(assignedWorker as IUser).email}</p>
                   </div>
                 </div>
               ) : task.isOpenForClaim ? (
                 <div className="flex items-center gap-2">
-                  <AlertCircle size={14} className="text-yellow-400" />
-                  <span className="text-xs text-yellow-400">Open for claim</span>
+                  <AlertCircle size={14} className="text-gray-400" />
+                  <span className="text-xs text-gray-500">Open for claim</span>
                 </div>
               ) : (
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Unassigned</p>
+                <p className="text-xs text-gray-400">Unassigned</p>
               )}
               {claimedWorker && typeof claimedWorker === 'object' && (
-                <div className="mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Claimed by</p>
-                  <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{(claimedWorker as IUser).name}</p>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-400 mb-1">Claimed by</p>
+                  <p className="text-sm font-medium text-gray-700">{(claimedWorker as IUser).name}</p>
                 </div>
               )}
             </div>

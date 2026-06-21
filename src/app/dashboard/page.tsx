@@ -50,11 +50,11 @@ export default async function DashboardPage() {
   const statusMap = Object.fromEntries(data.tasksByStatus.map((s: { _id: string; count: number }) => [s._id, s.count]));
 
   const quickActions = [
-    { label: 'Add Client', href: '/clients', icon: Users, color: 'text-indigo-400' },
-    { label: 'Create Board', href: '/boards', icon: Calendar, color: 'text-purple-400' },
-    { label: 'Create Task', href: '/tasks', icon: CheckCircle, color: 'text-emerald-400' },
-    { label: 'Add Payment', href: '/payments', icon: DollarSign, color: 'text-yellow-400' },
-    { label: 'Add Report', href: '/reports', icon: BarChart3, color: 'text-blue-400' },
+    { label: 'Add Client', href: '/clients', icon: Users, color: 'text-zinc-400' },
+    { label: 'Create Board', href: '/boards', icon: Calendar, color: 'text-zinc-400' },
+    { label: 'Create Task', href: '/tasks', icon: CheckCircle, color: 'text-zinc-400' },
+    { label: 'Add Payment', href: '/payments', icon: DollarSign, color: 'text-zinc-400' },
+    { label: 'Add Report', href: '/reports', icon: BarChart3, color: 'text-zinc-400' },
   ];
 
   return (
@@ -64,17 +64,17 @@ export default async function DashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Active Clients" value={data.activeClients} icon={Users} iconColor="text-indigo-400" />
-          <StatCard label="Monthly Revenue" value={formatCurrency(data.totalRevenue)} icon={DollarSign} iconColor="text-emerald-400" />
-          <StatCard label="Pending Payments" value={data.pendingPayments} icon={Clock} iconColor="text-yellow-400" subtitle={`${data.latePayments} late`} />
-          <StatCard label="Needs Fix" value={data.needsFixCount} icon={AlertCircle} iconColor="text-orange-400" />
+          <StatCard label="Active Clients" value={data.activeClients} icon={Users} iconColor="text-zinc-400" />
+          <StatCard label="Monthly Revenue" value={formatCurrency(data.totalRevenue)} icon={DollarSign} iconColor="text-zinc-400" />
+          <StatCard label="Pending Payments" value={data.pendingPayments} icon={Clock} iconColor="text-zinc-400" subtitle={`${data.latePayments} late`} />
+          <StatCard label="Needs Fix" value={data.needsFixCount} icon={AlertCircle} iconColor="text-zinc-400" />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Due Today" value={(data.todayTasks as unknown[]).length} icon={Calendar} iconColor="text-blue-400" />
-          <StatCard label="Overdue Tasks" value={(data.overdueTasks as unknown[]).length} icon={AlertCircle} iconColor="text-red-400" />
-          <StatCard label="Scheduled This Week" value={data.scheduledThisWeek} icon={TrendingUp} iconColor="text-purple-400" />
-          <StatCard label="Total Open Tasks" value={Object.values(statusMap).reduce((a: number, b) => a + (b as number), 0)} icon={CheckCircle} iconColor="text-slate-400" />
+          <StatCard label="Due Today" value={(data.todayTasks as unknown[]).length} icon={Calendar} iconColor="text-zinc-400" />
+          <StatCard label="Overdue Tasks" value={(data.overdueTasks as unknown[]).length} icon={AlertCircle} iconColor="text-zinc-400" />
+          <StatCard label="Scheduled This Week" value={data.scheduledThisWeek} icon={TrendingUp} iconColor="text-zinc-400" />
+          <StatCard label="Total Open Tasks" value={Object.values(statusMap).reduce((a: number, b) => a + (b as number), 0)} icon={CheckCircle} iconColor="text-zinc-400" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -105,14 +105,14 @@ export default async function DashboardPage() {
           <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Overdue Tasks</h3>
-              <Link href="/tasks?filter=overdue" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
+              <Link href="/tasks?filter=overdue" className="text-xs text-zinc-500 hover:text-white">View all</Link>
             </div>
             {(data.overdueTasks as unknown[]).length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No overdue tasks!</p>
             ) : (
               <div className="space-y-2">
                 {(data.overdueTasks as unknown as Array<{ _id: string; title: string; deadline?: Date; clientId?: { name: string } }>).slice(0, 4).map((task) => (
-                  <Link key={task._id} href={`/tasks/${task._id}`} className="block p-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                  <Link key={task._id} href={`/tasks/${task._id}`} className="block p-2.5 rounded-lg hover:bg-zinc-900 transition-colors">
                     <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{(task.clientId as { name: string } | undefined)?.name}</span>
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
                   <Link
                     key={action.label}
                     href={action.href}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-zinc-900"
                   >
                     <div className="p-1.5 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
                       <Icon size={14} className={action.color} />
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
             <div className="space-y-0">
               {(data.recentActivity as unknown as Array<{ _id: string; message: string; createdAt: Date; userId?: { name: string } }>).map((log, i) => (
                 <div key={log._id} className="flex items-start gap-3 py-2.5 border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#222222', color: 'white' }}>
                     {(log.userId as { name: string } | undefined)?.name?.charAt(0) ?? 'S'}
                   </div>
                   <div className="min-w-0">

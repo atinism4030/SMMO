@@ -41,10 +41,10 @@ export default async function WorkerDashboardPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Active Tasks" value={(data.myTasks as unknown[]).length} icon={CheckSquare} iconColor="text-indigo-400" />
-          <StatCard label="In Progress" value={data.myInProgress} icon={Clock} iconColor="text-blue-400" />
-          <StatCard label="Overdue" value={data.myOverdue} icon={AlertCircle} iconColor="text-red-400" />
-          <StatCard label="Completed This Month" value={data.completedThisMonth} icon={Star} iconColor="text-emerald-400" />
+          <StatCard label="Active Tasks" value={(data.myTasks as unknown[]).length} icon={CheckSquare} iconColor="text-zinc-400" />
+          <StatCard label="In Progress" value={data.myInProgress} icon={Clock} iconColor="text-zinc-400" />
+          <StatCard label="Overdue" value={data.myOverdue} icon={AlertCircle} iconColor="text-zinc-400" />
+          <StatCard label="Completed This Month" value={data.completedThisMonth} icon={Star} iconColor="text-zinc-400" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -52,7 +52,7 @@ export default async function WorkerDashboardPage() {
           <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>My Tasks</h3>
-              <Link href="/worker/my-tasks" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
+              <Link href="/worker/my-tasks" className="text-xs text-zinc-500 hover:text-white">View all</Link>
             </div>
             {(data.myTasks as unknown[]).length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No active tasks. Check available tasks!</p>
@@ -62,7 +62,7 @@ export default async function WorkerDashboardPage() {
                   const client = task.clientId as IClient;
                   const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
                   return (
-                    <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                    <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-zinc-900 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{client?.name}</p>
@@ -81,7 +81,7 @@ export default async function WorkerDashboardPage() {
           <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Available to Claim</h3>
-              <Link href="/worker/available-tasks" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
+              <Link href="/worker/available-tasks" className="text-xs text-zinc-500 hover:text-white">View all</Link>
             </div>
             {(data.availableTasks as unknown[]).length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No available tasks right now.</p>
@@ -90,13 +90,13 @@ export default async function WorkerDashboardPage() {
                 {(data.availableTasks as unknown as ITask[]).map(task => {
                   const client = task.clientId as IClient;
                   return (
-                    <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors">
+                    <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-zinc-900 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{client?.name}</p>
                       </div>
                       <PriorityBadge priority={task.priority} />
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Claim</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">Claim</span>
                     </Link>
                   );
                 })}

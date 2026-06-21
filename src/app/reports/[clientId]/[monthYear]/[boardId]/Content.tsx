@@ -160,12 +160,12 @@ export default function BoardReportContent({
                   onClick={() => setSelectedLang(code)}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-left"
                   style={selectedLang === code
-                    ? { background: 'rgba(99,102,241,0.15)', borderColor: '#6366f1', color: '#a5b4fc' }
+                    ? { background: 'rgba(255,255,255,0.1)', borderColor: '#ffffff', color: '#ffffff' }
                     : { background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }
                   }
                 >
                   <span className="text-sm font-medium">{label}</span>
-                  {selectedLang === code && <CheckCircle2 size={15} className="text-indigo-400" />}
+                  {selectedLang === code && <CheckCircle2 size={15} className="text-zinc-400" />}
                 </button>
               ))}
             </div>
@@ -270,7 +270,7 @@ export default function BoardReportContent({
                                     target="_blank"
                                     rel="noopener"
                                     className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-colors hover:opacity-80"
-                                    style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
+                                    style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)' }}
                                   >
                                     <Globe size={9} />
                                     {lnk.platform}
@@ -297,7 +297,7 @@ export default function BoardReportContent({
         {missing.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle size={15} className="text-orange-400" />
+              <AlertTriangle size={15} className="text-zinc-400" />
               <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                 Missing Insights ({missing.length})
               </h2>
@@ -332,7 +332,7 @@ export default function BoardReportContent({
                       <td className="px-4 py-2.5">
                         <button
                           onClick={() => router.push(`/tasks/${task._id}`)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
                         >
                           <ExternalLink size={11} />
                           Add Insights
@@ -349,9 +349,9 @@ export default function BoardReportContent({
         {/* All complete state */}
         {missing.length === 0 && posted.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-            style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-            <p className="text-sm text-emerald-400 font-medium">
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <CheckCircle2 size={16} className="text-zinc-400 shrink-0" />
+            <p className="text-sm text-zinc-300 font-medium">
               All published content has complete performance insights for this board.
             </p>
           </div>

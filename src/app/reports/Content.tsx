@@ -65,15 +65,15 @@ function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () =>
   return (
     <button
       onClick={onClick}
-      className="group text-left rounded-2xl border p-5 transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5 active:translate-y-0"
+      className="group text-left rounded-2xl border p-5 transition-all hover:border-zinc-600 hover:-translate-y-0.5 active:translate-y-0"
       style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          style={{ background: '#222222' }}>
           <Building2 size={18} className="text-white" />
         </div>
-        <ChevronRight size={16} className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
+        <ChevronRight size={16} className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
       </div>
 
       <p className="text-base font-bold mb-0.5 truncate" style={{ color: 'var(--text-primary)' }}>
@@ -86,9 +86,9 @@ function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () =>
       <div className="grid grid-cols-2 gap-2 mb-4">
         <MiniStat icon={Layers}        label="Boards"    value={client.totalBoards} />
         <MiniStat icon={FileText}      label="Published" value={client.totalPosted} />
-        <MiniStat icon={CheckCircle2}  label="Insights"  value={client.completedInsights} color="text-emerald-400" />
+        <MiniStat icon={CheckCircle2}  label="Insights"  value={client.completedInsights} color="text-zinc-400" />
         <MiniStat icon={AlertTriangle} label="Missing"   value={client.missingInsights}
-          color={client.missingInsights > 0 ? 'text-orange-400' : 'text-slate-400'} />
+          color="text-zinc-400" />
       </div>
 
       {client.totalPosted > 0 ? (
@@ -96,16 +96,14 @@ function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () =>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
             <span className="text-xs font-bold"
-              style={{ color: client.progress === 100 ? '#10b981' : 'var(--text-primary)' }}>
+              style={{ color: 'var(--text-primary)' }}>
               {client.progress}%
             </span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
             <div className="h-1.5 rounded-full transition-all" style={{
               width: `${client.progress}%`,
-              background: client.progress === 100
-                ? 'linear-gradient(90deg,#10b981,#34d399)'
-                : 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+              background: '#ffffff',
             }} />
           </div>
         </>

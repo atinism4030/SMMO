@@ -11,17 +11,17 @@ import { ArrowLeft, MapPin, Clock, RefreshCw, Phone, CheckSquare } from 'lucide-
 import toast from 'react-hot-toast';
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  PLANNED:     { bg: 'rgba(99,102,241,0.12)', text: '#818cf8' },
-  IN_PROGRESS: { bg: 'rgba(245,158,11,0.12)', text: '#fbbf24' },
-  COMPLETED:   { bg: 'rgba(16,185,129,0.12)', text: '#34d399' },
-  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',  text: '#f87171' },
+  PLANNED:     { bg: 'rgba(255,255,255,0.04)', text: 'var(--text-secondary)' },
+  IN_PROGRESS: { bg: 'rgba(255,255,255,0.06)', text: '#d4d4d8' },
+  COMPLETED:   { bg: 'rgba(255,255,255,0.04)', text: '#a1a1aa' },
+  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',   text: '#f87171' },
 };
 
 function progressColor(pct: number) {
-  if (pct >= 100) return '#34d399';
-  if (pct >= 60)  return '#6366f1';
-  if (pct >= 30)  return '#f59e0b';
-  return '#f87171';
+  if (pct >= 100) return '#a1a1aa';
+  if (pct >= 60)  return '#ffffff';
+  if (pct >= 30)  return '#71717a';
+  return '#ef4444';
 }
 
 export default function WorkerPhotoshootDetailContent({
@@ -188,7 +188,7 @@ export default function WorkerPhotoshootDetailContent({
               <div className="flex flex-wrap gap-2">
                 {ps.equipmentNeeded.map(e => (
                   <span key={e} className="text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc' }}>
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#ffffff' }}>
                     {e}
                   </span>
                 ))}
@@ -280,8 +280,8 @@ function WorkerShotRow({ shot, onToggle, toggling }: {
       disabled={toggling}
       className="w-full text-left rounded-2xl border p-4 flex items-start gap-4 transition-all active:scale-[0.98]"
       style={{
-        background: shot.completed ? 'rgba(16,185,129,0.06)' : 'var(--bg-card)',
-        borderColor: shot.completed ? 'rgba(16,185,129,0.3)' : 'var(--border)',
+        background: shot.completed ? 'rgba(255,255,255,0.03)' : 'var(--bg-card)',
+        borderColor: shot.completed ? 'rgba(255,255,255,0.15)' : 'var(--border)',
       }}
     >
       {/* Big checkbox */}

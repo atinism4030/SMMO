@@ -43,7 +43,7 @@ export default function AvailableTasksContent() {
             {tasks.map(task => {
               const client = task.clientId as IClient;
               return (
-                <div key={task._id} className="rounded-xl border p-4 hover:border-yellow-500/30 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <div key={task._id} className="rounded-xl border p-4 hover:border-zinc-600 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">

@@ -14,11 +14,11 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 const COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
-  { key: 'CONTENT_PREPARATION', label: 'Content Preparation', color: '#3b82f6' },
-  { key: 'QUALITY_ASSURANCE',   label: 'Quality Assurance',   color: '#f59e0b' },
-  { key: 'POST_VERIFIED',       label: 'Post Verified',       color: '#10b981' },
-  { key: 'READY_TO_POST',       label: 'Ready to Post',       color: '#8b5cf6' },
-  { key: 'POSTED',              label: 'Posted',              color: '#34d399' },
+  { key: 'CONTENT_PREPARATION', label: 'Content Preparation', color: '#52525b' },
+  { key: 'QUALITY_ASSURANCE',   label: 'Quality Assurance',   color: '#71717a' },
+  { key: 'POST_VERIFIED',       label: 'Post Verified',       color: '#a1a1aa' },
+  { key: 'READY_TO_POST',       label: 'Ready to Post',       color: '#d4d4d8' },
+  { key: 'POSTED',              label: 'Posted',              color: '#ffffff' },
   { key: 'NEEDS_FIX',           label: 'Needs Fix',           color: '#ef4444' },
 ];
 
@@ -147,7 +147,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
                 <span className="text-xs pb-1" style={{ color: 'var(--text-muted)' }}>/ {tasks.length} posted</span>
               </div>
               <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
-                <div className="h-1.5 rounded-full bg-emerald-500 transition-all"
+                <div className="h-1.5 rounded-full bg-zinc-400 transition-all"
                   style={{ width: tasks.length > 0 ? `${(postedCount / tasks.length) * 100}%` : '0%' }} />
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
                     const done = checklist.filter(c => c.done).length;
                     return (
                       <Link key={task._id} href={`/tasks/${task._id}`}
-                        className="block rounded-xl border p-3 hover:border-indigo-500/30 transition-all duration-150 cursor-pointer"
+                        className="block rounded-xl border p-3 hover:border-zinc-600 transition-all duration-150 cursor-pointer"
                         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                         {/* Title + type */}
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -201,7 +201,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
                           <div className="flex items-center gap-1.5 mb-2">
                             <CheckSquare size={11} style={{ color: 'var(--text-muted)' }} />
                             <div className="flex-1 h-1 rounded-full" style={{ background: 'var(--bg-elevated)' }}>
-                              <div className="h-1 rounded-full bg-emerald-500 transition-all"
+                              <div className="h-1 rounded-full bg-zinc-400 transition-all"
                                 style={{ width: `${(done / checklist.length) * 100}%` }} />
                             </div>
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{done}/{checklist.length}</span>
@@ -213,11 +213,11 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
                           <div className="flex items-center gap-1.5">
                             {worker && typeof worker === 'object' ? (
                               <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                                style={{ background: '#222222', color: '#ffffff' }}>
                                 {worker.name?.charAt(0)}
                               </div>
                             ) : task.isOpenForClaim ? (
-                              <span className="text-xs text-yellow-400">Open</span>
+                              <span className="text-xs text-zinc-400">Open</span>
                             ) : null}
                           </div>
                           <div className="flex items-center gap-1">
@@ -290,9 +290,9 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
                   }))}
                   className="px-3 py-1 rounded-full text-xs font-medium transition-all border"
                   style={{
-                    background: cardForm.platforms.includes(p) ? 'rgba(99,102,241,0.2)' : 'var(--bg-elevated)',
-                    borderColor: cardForm.platforms.includes(p) ? '#6366f1' : 'var(--border)',
-                    color: cardForm.platforms.includes(p) ? '#a5b4fc' : 'var(--text-secondary)',
+                    background: cardForm.platforms.includes(p) ? 'rgba(255,255,255,0.1)' : 'var(--bg-elevated)',
+                    borderColor: cardForm.platforms.includes(p) ? '#ffffff' : 'var(--border)',
+                    color: cardForm.platforms.includes(p) ? '#ffffff' : 'var(--text-secondary)',
                   }}>
                   {p}
                 </button>

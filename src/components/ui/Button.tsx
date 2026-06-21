@@ -9,11 +9,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<string, string> = {
-  primary: 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/50',
-  secondary: 'border text-slate-200 hover:text-white hover:border-slate-500',
-  ghost: 'hover:text-white',
-  danger: 'bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30',
-  success: 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30',
+  primary:   'bg-white text-black hover:bg-zinc-200 border border-transparent',
+  secondary: 'bg-transparent border border-zinc-700 text-zinc-300 hover:bg-zinc-900 hover:text-white',
+  ghost:     'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-900',
+  danger:    'bg-transparent border border-zinc-700 text-red-400 hover:bg-red-500/10 hover:border-red-700',
+  success:   'bg-transparent border border-zinc-700 text-zinc-200 hover:bg-zinc-800',
 };
 
 const sizes: Record<string, string> = {
@@ -28,12 +28,11 @@ export default function Button({ variant = 'primary', size = 'md', loading, clas
       {...props}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],
         className
       )}
-      style={variant === 'secondary' ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : variant === 'ghost' ? { color: 'var(--text-secondary)' } : undefined}
     >
       {loading && <Loader2 size={14} className="animate-spin" />}
       {children}

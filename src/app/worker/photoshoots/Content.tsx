@@ -9,17 +9,17 @@ import type { IPhotoshootSession, IClient } from '@/types';
 import { Camera, MapPin, Clock, CheckSquare, ChevronRight } from 'lucide-react';
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  PLANNED:     { bg: 'rgba(99,102,241,0.12)', text: '#818cf8', dot: '#818cf8' },
-  IN_PROGRESS: { bg: 'rgba(245,158,11,0.12)', text: '#fbbf24', dot: '#fbbf24' },
-  COMPLETED:   { bg: 'rgba(16,185,129,0.12)', text: '#34d399', dot: '#34d399' },
-  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',  text: '#f87171', dot: '#f87171' },
+  PLANNED:     { bg: 'rgba(255,255,255,0.04)', text: 'var(--text-secondary)', dot: 'var(--text-secondary)' },
+  IN_PROGRESS: { bg: 'rgba(255,255,255,0.06)', text: '#d4d4d8', dot: '#d4d4d8' },
+  COMPLETED:   { bg: 'rgba(255,255,255,0.04)', text: '#a1a1aa', dot: '#a1a1aa' },
+  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', dot: '#f87171' },
 };
 
 function progressColor(pct: number) {
-  if (pct >= 100) return '#34d399';
-  if (pct >= 60)  return '#6366f1';
-  if (pct >= 30)  return '#f59e0b';
-  return '#f87171';
+  if (pct >= 100) return '#a1a1aa';
+  if (pct >= 60)  return '#ffffff';
+  if (pct >= 30)  return '#71717a';
+  return '#ef4444';
 }
 
 export default function WorkerPhotoshootsContent() {

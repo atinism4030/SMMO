@@ -231,7 +231,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{doneCount}/{checklist.length}</span>
                 </div>
                 <div className="h-1.5 rounded-full mb-4" style={{ background: 'var(--bg-elevated)' }}>
-                  <div className="h-1.5 rounded-full bg-emerald-500 transition-all"
+                  <div className="h-1.5 rounded-full bg-zinc-400 transition-all"
                     style={{ width: `${checklist.length ? (doneCount / checklist.length) * 100 : 0}%` }} />
                 </div>
                 <div className="space-y-1">
@@ -239,7 +239,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                     <div key={i}
                       onClick={() => myTask && toggleChecklist(i)}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${myTask ? 'cursor-pointer hover:bg-white/5' : ''}`}>
-                      <div className={`w-4 h-4 rounded shrink-0 flex items-center justify-center ${item.done ? 'bg-emerald-500' : 'border'}`}
+                      <div className={`w-4 h-4 rounded shrink-0 flex items-center justify-center ${item.done ? 'bg-zinc-700' : 'border'}`}
                         style={!item.done ? { borderColor: 'var(--border)' } : {}}>
                         {item.done && <Check size={10} className="text-white" />}
                       </div>
@@ -296,7 +296,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                   <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
                     style={{ background: 'var(--bg-elevated)' }}>
                     <a href={lnk.url} target="_blank" rel="noopener"
-                      className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                      className="flex items-center gap-2 text-xs text-zinc-400 hover:text-white truncate">
                       <ExternalLink size={11} />
                       <span className="font-medium">{lnk.label}</span>
                       {lnk.type && <span className="opacity-60">· {lnk.type}</span>}
@@ -323,7 +323,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                   return (
                     <div key={i} className="flex gap-3">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                        style={{ background: '#222222', color: '#ffffff' }}>
                         {user?.name?.charAt(0) ?? 'U'}
                       </div>
                       <div className="flex-1 rounded-lg px-3 py-2" style={{ background: 'var(--bg-elevated)' }}>
@@ -348,16 +348,16 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
             {/* Published Post Links — workers can add if assigned/claimed */}
             {task.status === 'POSTED' && (
               <div className="rounded-xl border-2 p-4"
-                style={{ background: 'var(--bg-card)', borderColor: 'rgba(99,102,241,0.3)' }}>
+                style={{ background: 'var(--bg-card)', borderColor: 'rgba(255,255,255,0.12)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                    <Globe size={13} className="text-indigo-400" />Published Post Links
+                    <Globe size={13} className="text-zinc-400" />Published Post Links
                   </p>
                   {myTask && !showPostedLinkForm && (
                     <button
                       onClick={() => { setShowPostedLinkForm(true); setPostedLinkError(''); }}
                       className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg"
-                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+                      style={{ background: 'rgba(255,255,255,0.06)', color: '#ffffff' }}>
                       <Plus size={11} />Add Link
                     </button>
                   )}
@@ -391,9 +391,9 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
 
                 {(task.postedLinks ?? []).length === 0 && !showPostedLinkForm && (
                   <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                    <AlertTriangle size={12} className="text-amber-400 shrink-0" />
-                    <p className="text-xs text-amber-300">No published post link added yet.</p>
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <AlertTriangle size={12} className="text-zinc-500 shrink-0" />
+                    <p className="text-xs text-zinc-400">No published post link added yet.</p>
                   </div>
                 )}
 
@@ -402,7 +402,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                     <div key={lnk._id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2"
                       style={{ background: 'var(--bg-elevated)' }}>
                       <a href={lnk.url} target="_blank" rel="noopener"
-                        className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                        className="flex items-center gap-2 text-xs text-zinc-400 hover:text-white truncate">
                         <span>{platformIcon(lnk.platform)}</span>
                         <span className="font-semibold">{lnk.platform}</span>
                         <span className="opacity-60">— View Post</span>
@@ -423,12 +423,12 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
 
                 {effectiveStatus === 'WAITING' && (
                   <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                    <Clock size={14} className="text-blue-400 shrink-0" />
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Clock size={14} className="text-zinc-400 shrink-0" />
                     <div>
-                      <p className="font-medium text-blue-300 text-xs">Waiting for report window</p>
+                      <p className="font-medium text-zinc-200 text-xs">Waiting for report window</p>
                       {task.reporting?.reportDueAt && (
-                        <p className="text-blue-200/70 text-xs">
+                        <p className="text-zinc-400 text-xs">
                           Due: {formatDate(task.reporting.reportDueAt)} · {formatCountdown(task.reporting.reportDueAt)} remaining
                         </p>
                       )}
@@ -438,11 +438,11 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
 
                 {effectiveStatus === 'NEEDS_DATA' && (
                   <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
-                    <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <AlertTriangle size={14} className="text-zinc-400 shrink-0" />
                     <div>
-                      <p className="font-medium text-amber-300 text-xs">Report data is due</p>
-                      <p className="text-amber-200/60 text-xs">The CEO will enter performance metrics.</p>
+                      <p className="font-medium text-zinc-200 text-xs">Report data is due</p>
+                      <p className="text-zinc-500 text-xs">The CEO will enter performance metrics.</p>
                     </div>
                   </div>
                 )}
@@ -450,12 +450,12 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                 {effectiveStatus === 'COMPLETED' && (
                   <>
                     <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-4"
-                      style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <CheckCircle2 size={14} className="text-zinc-400 shrink-0" />
                       <div>
-                        <p className="font-medium text-emerald-300 text-xs">Report completed</p>
+                        <p className="font-medium text-zinc-200 text-xs">Report completed</p>
                         {task.reporting?.reportCompletedAt && (
-                          <p className="text-emerald-200/60 text-xs">{formatDate(task.reporting.reportCompletedAt)}</p>
+                          <p className="text-zinc-500 text-xs">{formatDate(task.reporting.reportCompletedAt)}</p>
                         )}
                       </div>
                     </div>
@@ -474,8 +474,8 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
                             );
                           })}
                           {metrics.engagementRate != null && !isStory && (
-                            <div className="rounded-lg p-2 text-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
-                              <p className="text-lg font-bold text-emerald-400">{metrics.engagementRate}%</p>
+                            <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
+                              <p className="text-lg font-bold text-white">{metrics.engagementRate}%</p>
                               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Eng. Rate</p>
                             </div>
                           )}

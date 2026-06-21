@@ -20,16 +20,16 @@ const STATUS_TABS = [
 ] as const;
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  PLANNED:     { bg: 'rgba(99,102,241,0.12)', text: '#818cf8', dot: '#818cf8' },
-  IN_PROGRESS: { bg: 'rgba(245,158,11,0.12)', text: '#fbbf24', dot: '#fbbf24' },
-  COMPLETED:   { bg: 'rgba(16,185,129,0.12)', text: '#34d399', dot: '#34d399' },
-  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',  text: '#f87171', dot: '#f87171' },
+  PLANNED:     { bg: 'rgba(255,255,255,0.04)', text: 'var(--text-secondary)', dot: 'var(--text-secondary)' },
+  IN_PROGRESS: { bg: 'rgba(255,255,255,0.06)', text: '#d4d4d8', dot: '#d4d4d8' },
+  COMPLETED:   { bg: 'rgba(255,255,255,0.04)', text: '#a1a1aa', dot: '#a1a1aa' },
+  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', dot: '#f87171' },
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  LOW:    '#6b7280',
-  MEDIUM: '#3b82f6',
-  HIGH:   '#f97316',
+  LOW:    '#52525b',
+  MEDIUM: '#71717a',
+  HIGH:   '#a1a1aa',
   URGENT: '#ef4444',
 };
 
@@ -39,7 +39,7 @@ function statusLabel(s: string) {
 
 function progressColor(pct: number) {
   if (pct >= 100) return '#34d399';
-  if (pct >= 60) return '#6366f1';
+  if (pct >= 60) return '#ffffff';
   if (pct >= 30) return '#f59e0b';
   return '#f87171';
 }
@@ -178,7 +178,7 @@ export default function PhotoshootsContent() {
                         <div className="flex -space-x-1 ml-1">
                           {workers.slice(0, 3).map(w => (
                             <div key={String(w._id ?? w)} className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold border border-[var(--bg-card)]"
-                              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white' }}>
+                              style={{ background: '#222222', color: '#ffffff' }}>
                               {(w.name ?? '?').charAt(0).toUpperCase()}
                             </div>
                           ))}
@@ -222,7 +222,7 @@ export default function PhotoshootsContent() {
                       <button
                         onClick={() => router.push(`/photoshoots/${session._id}`)}
                         className="flex items-center gap-1 text-xs font-semibold transition-colors"
-                        style={{ color: '#818cf8' }}
+                        style={{ color: 'var(--text-secondary)' }}
                       >
                         Open <ChevronRight size={12} />
                       </button>
@@ -245,7 +245,7 @@ export default function PhotoshootsContent() {
 }
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: 'indigo' | 'amber' | 'green' }) {
-  const color = accent === 'indigo' ? '#818cf8' : accent === 'amber' ? '#fbbf24' : accent === 'green' ? '#34d399' : 'var(--text-primary)';
+  const color = accent === 'indigo' ? 'var(--text-secondary)' : accent === 'amber' ? '#fbbf24' : accent === 'green' ? '#34d399' : 'var(--text-primary)';
   return (
     <div className="rounded-2xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
       <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{label}</p>

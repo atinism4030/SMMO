@@ -185,12 +185,11 @@ function BoardCard({
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Published</p>
         </div>
         <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-sm font-bold text-emerald-400">{board.completedInsights}</p>
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{board.completedInsights}</p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Insights</p>
         </div>
         <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
-          <p className={`text-sm font-bold ${board.missingInsights > 0 ? 'text-orange-400' : ''}`}
-            style={{ color: board.missingInsights === 0 ? 'var(--text-primary)' : undefined }}>
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
             {board.missingInsights}
           </p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Missing</p>
@@ -199,7 +198,7 @@ function BoardCard({
 
       {board.totalViews > 0 && (
         <div className="flex items-center gap-2 mb-3 px-2.5 py-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
-          <Eye size={11} className="text-indigo-400" />
+          <Eye size={11} className="text-zinc-400" />
           <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
             {board.totalViews.toLocaleString('en-US')} total views
           </span>
@@ -208,7 +207,7 @@ function BoardCard({
 
       {/* Missing warning */}
       {board.missingInsights > 0 && (
-        <div className="flex items-center gap-1.5 mb-3 text-xs text-orange-400">
+        <div className="flex items-center gap-1.5 mb-3 text-xs text-zinc-400">
           <AlertTriangle size={11} />
           <span>{board.missingInsights} content piece{board.missingInsights !== 1 ? 's' : ''} missing insights</span>
         </div>
@@ -220,17 +219,12 @@ function BoardCard({
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
             <span className="text-xs font-bold"
-              style={{ color: progress === 100 ? '#10b981' : 'var(--text-primary)' }}>
+              style={{ color: 'var(--text-primary)' }}>
               {progress}%
             </span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden mb-4" style={{ background: 'var(--bg-elevated)' }}>
-            <div className="h-1.5 rounded-full" style={{
-              width: `${progress}%`,
-              background: progress === 100
-                ? 'linear-gradient(90deg,#10b981,#34d399)'
-                : 'linear-gradient(90deg,#6366f1,#8b5cf6)',
-            }} />
+            <div className="h-1.5 rounded-full bg-zinc-400" style={{ width: `${progress}%` }} />
           </div>
         </>
       )}

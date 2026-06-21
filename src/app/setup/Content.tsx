@@ -54,17 +54,11 @@ export default function SetupContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(ellipse at center, #6366f1 0%, transparent 70%)' }} />
-      </div>
-
-      <div className="w-full max-w-sm relative">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-black">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-black font-bold text-2xl mb-4 shadow-lg">
             S
           </div>
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>SMMO</h1>
@@ -79,8 +73,8 @@ export default function SetupContent() {
 
           {success ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <CheckCircle size={40} className="text-emerald-400" />
-              <p className="text-sm text-center text-emerald-400">{success}</p>
+              <CheckCircle size={40} className="text-zinc-300" />
+              <p className="text-sm text-center text-zinc-300">{success}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +84,7 @@ export default function SetupContent() {
                 <div className="relative">
                   <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input type="text" value={form.name} onChange={setField('name')} placeholder="Alex Johnson"
-                    required className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
+                    required className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-zinc-500 placeholder:text-zinc-600"
                     style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                 </div>
               </div>
@@ -101,7 +95,7 @@ export default function SetupContent() {
                 <div className="relative">
                   <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input type="email" value={form.email} onChange={setField('email')} placeholder="admin@yourcompany.com"
-                    required className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
+                    required className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-zinc-500 placeholder:text-zinc-600"
                     style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                 </div>
               </div>
@@ -112,7 +106,7 @@ export default function SetupContent() {
                 <div className="relative">
                   <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input type="tel" value={form.phone} onChange={setField('phone')} placeholder="+1-555-0100"
-                    className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-zinc-500 placeholder:text-zinc-600"
                     style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                 </div>
               </div>
@@ -124,7 +118,7 @@ export default function SetupContent() {
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={setField('password')}
                     placeholder="••••••••" required minLength={8}
-                    className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
+                    className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm border transition-colors focus:border-zinc-500 placeholder:text-zinc-600"
                     style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                   <button type="button" onClick={() => setShowPassword(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
@@ -140,7 +134,7 @@ export default function SetupContent() {
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input type={showConfirm ? 'text' : 'password'} value={form.confirmPassword} onChange={setField('confirmPassword')}
                     placeholder="••••••••" required
-                    className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
+                    className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm border transition-colors focus:border-zinc-500 placeholder:text-zinc-600"
                     style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                   <button type="button" onClick={() => setShowConfirm(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
@@ -156,8 +150,7 @@ export default function SetupContent() {
               )}
 
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                className="w-full py-2.5 rounded-lg text-sm font-semibold bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 {loading ? 'Creating account...' : 'Create Admin Account'}
               </button>
             </form>

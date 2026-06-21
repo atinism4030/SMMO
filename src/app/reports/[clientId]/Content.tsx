@@ -128,13 +128,13 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
   return (
     <button
       onClick={onClick}
-      className="group text-left rounded-2xl border p-5 transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5"
+      className="group text-left rounded-2xl border p-5 transition-all hover:border-zinc-600 hover:-translate-y-0.5"
       style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
       {/* Month icon + name */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          style={{ background: '#222222' }}>
           <Calendar size={17} className="text-white" />
         </div>
         <div>
@@ -157,18 +157,17 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
           <div className="flex items-center gap-1 mb-1">
-            <CheckCircle2 size={10} className="text-emerald-400" />
+            <CheckCircle2 size={10} className="text-zinc-400" />
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Insights</p>
           </div>
-          <p className="text-sm font-bold text-emerald-400">{s.completedInsights}</p>
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.completedInsights}</p>
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
           <div className="flex items-center gap-1 mb-1">
-            <AlertTriangle size={10} className={s.missingInsights > 0 ? 'text-orange-400' : 'text-slate-400'} />
+            <AlertTriangle size={10} className="text-zinc-400" />
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Missing</p>
           </div>
-          <p className={`text-sm font-bold ${s.missingInsights > 0 ? 'text-orange-400' : ''}`}
-            style={{ color: s.missingInsights === 0 ? 'var(--text-primary)' : undefined }}>
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
             {s.missingInsights}
           </p>
         </div>
@@ -177,7 +176,7 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
       {/* Total views */}
       {s.totalViews > 0 && (
         <div className="flex items-center gap-2 mb-3 px-2.5 py-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
-          <Eye size={12} className="text-indigo-400" />
+          <Eye size={12} className="text-zinc-400" />
           <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
             {s.totalViews.toLocaleString('en-US')} total views
           </span>
@@ -189,16 +188,14 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
         <>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
-            <span className="text-xs font-bold" style={{ color: progress === 100 ? '#10b981' : 'var(--text-primary)' }}>
+            <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
               {progress}%
             </span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
             <div className="h-1.5 rounded-full" style={{
               width: `${progress}%`,
-              background: progress === 100
-                ? 'linear-gradient(90deg,#10b981,#34d399)'
-                : 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+              background: '#ffffff',
             }} />
           </div>
         </>

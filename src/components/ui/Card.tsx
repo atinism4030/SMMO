@@ -17,14 +17,10 @@ export default function Card({ children, className, padding = 'md', onClick, hov
       className={cn(
         'rounded-xl border',
         paddingMap[padding],
-        hoverable && 'cursor-pointer transition-all duration-150',
+        hoverable && 'cursor-pointer transition-all duration-150 hover:border-zinc-600',
         className
       )}
-      style={{
-        background: 'var(--bg-card)',
-        borderColor: 'var(--border)',
-        ...(hoverable ? {} : {}),
-      }}
+      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
       {children}
     </div>
@@ -41,9 +37,9 @@ interface StatCardProps {
   subtitle?: string;
 }
 
-export function StatCard({ label, value, icon: Icon, iconColor, subtitle }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, subtitle }: StatCardProps) {
   return (
-    <Card className="hover:border-indigo-500/30 transition-colors">
+    <Card className="hover:border-zinc-600 transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -52,7 +48,7 @@ export function StatCard({ label, value, icon: Icon, iconColor, subtitle }: Stat
         </div>
         {Icon && (
           <div className="p-2.5 rounded-lg ml-3" style={{ background: 'var(--bg-elevated)' }}>
-            <Icon size={18} className={iconColor ?? 'text-indigo-400'} />
+            <Icon size={18} className="text-zinc-400" />
           </div>
         )}
       </div>

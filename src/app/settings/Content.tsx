@@ -128,13 +128,13 @@ export default function SettingsContent() {
             <div className="flex items-center gap-4 mb-6 p-5 rounded-xl border"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
               <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                style={{ background: '#222222', color: 'white' }}>
                 {getInitials(user.name)}
               </div>
               <div>
                 <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{user.email}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${user.role === 'CEO' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block bg-zinc-900 text-zinc-400">
                   {user.role}
                 </span>
               </div>
@@ -146,8 +146,8 @@ export default function SettingsContent() {
               <button key={t.key} onClick={() => setTab(t.key)}
                 className="px-4 py-2.5 text-sm font-medium border-b-2 flex items-center gap-1.5 transition-colors"
                 style={{
-                  borderColor: tab === t.key ? '#6366f1' : 'transparent',
-                  color: tab === t.key ? '#a5b4fc' : 'var(--text-muted)',
+                  borderColor: tab === t.key ? '#ffffff' : 'transparent',
+                  color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
                 }}>
                 <t.icon size={14} />{t.label}
               </button>
@@ -194,7 +194,7 @@ export default function SettingsContent() {
               {/* Header card */}
               <div className="p-5 rounded-xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <FlaskConical size={16} className="text-indigo-400" />
+                  <FlaskConical size={16} className="text-zinc-400" />
                   <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Demo Report Data</h3>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
@@ -235,12 +235,12 @@ export default function SettingsContent() {
               {/* Status + actions */}
               {demoExists === true && (
                 <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
-                  style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                  <p className="text-emerald-300 text-xs font-medium flex-1">Demo report data already exists.</p>
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <CheckCircle2 size={14} className="text-zinc-400 shrink-0" />
+                  <p className="text-zinc-300 text-xs font-medium flex-1">Demo report data already exists.</p>
                   <Link href="/reports">
                     <button className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                      style={{ background: 'rgba(16,185,129,0.15)', color: '#6ee7b7' }}>
+                      style={{ background: 'rgba(255,255,255,0.08)', color: '#d4d4d8' }}>
                       <ExternalLink size={11} />View Reports
                     </button>
                   </Link>
@@ -295,7 +295,7 @@ export default function SettingsContent() {
                       <div className="space-y-1.5">
                         {cards.map(c => (
                           <div key={c.label} className="flex items-center gap-2">
-                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${c.done ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${c.done ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-900 text-zinc-500'}`}>
                               {c.done ? '✓' : '!'}
                             </span>
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{c.label}</span>

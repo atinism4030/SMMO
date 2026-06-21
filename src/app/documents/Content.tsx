@@ -13,10 +13,10 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 const TYPE_COLORS: Record<string, string> = {
-  CONTRACT: 'bg-indigo-500/20 text-indigo-400',
-  OFFER: 'bg-blue-500/20 text-blue-400',
-  INVOICE: 'bg-yellow-500/20 text-yellow-400',
-  OTHER: 'bg-gray-500/20 text-gray-400',
+  CONTRACT: 'bg-zinc-900 text-zinc-400',
+  OFFER: 'bg-zinc-900 text-zinc-400',
+  INVOICE: 'bg-zinc-800 text-zinc-300',
+  OTHER: 'bg-zinc-900 text-zinc-500',
 };
 
 export default function DocumentsContent() {
@@ -69,21 +69,21 @@ export default function DocumentsContent() {
             {filtered.map(a => {
               const client = a.clientId as unknown as IClient;
               return (
-                <div key={a._id} className="flex items-center gap-4 p-4 rounded-xl border hover:border-indigo-500/30 transition-colors" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <div key={a._id} className="flex items-center gap-4 p-4 rounded-xl border hover:border-zinc-700 transition-colors" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-elevated)' }}>
                     <FileText size={16} style={{ color: 'var(--text-muted)' }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <Link href={`/clients/${typeof client === 'string' ? client : client?._id}`} className="text-xs text-indigo-400 hover:text-indigo-300">{client?.name}</Link>
+                      <Link href={`/clients/${typeof client === 'string' ? client : client?._id}`} className="text-xs text-zinc-400 hover:text-white">{client?.name}</Link>
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>·</span>
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(a.createdAt)}</span>
                     </div>
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${TYPE_COLORS[a.agreementType] ?? TYPE_COLORS.OTHER}`}>{a.agreementType}</span>
                   {a.fileUrl && (
-                    <a href={a.fileUrl} target="_blank" rel="noopener" className="p-1.5 rounded-lg hover:bg-indigo-500/10 transition-colors" style={{ color: 'var(--text-muted)' }} title="Open file">
+                    <a href={a.fileUrl} target="_blank" rel="noopener" className="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors" style={{ color: 'var(--text-muted)' }} title="Open file">
                       <ExternalLink size={15} />
                     </a>
                   )}

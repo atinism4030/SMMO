@@ -14,7 +14,7 @@ export interface IClientDoc extends Document {
   packageName?: string;
   monthlyPrice?: number;
   currency?: string;
-  status: 'ACTIVE' | 'PAUSED' | 'CLOSED';
+  status: 'LEAD' | 'OFFER_SENT' | 'WAITING_RESPONSE' | 'ACCEPTED' | 'ACTIVE' | 'REJECTED' | 'PAUSED' | 'CLOSED';
   startDate?: Date;
   notes?: string;
   brandColors?: string[];
@@ -40,7 +40,7 @@ const ClientSchema = new Schema<IClientDoc>(
     packageName: { type: String },
     monthlyPrice: { type: Number },
     currency: { type: String, default: 'USD' },
-    status: { type: String, enum: ['ACTIVE', 'PAUSED', 'CLOSED'], default: 'ACTIVE' },
+    status: { type: String, enum: ['LEAD', 'OFFER_SENT', 'WAITING_RESPONSE', 'ACCEPTED', 'ACTIVE', 'REJECTED', 'PAUSED', 'CLOSED'], default: 'LEAD' },
     startDate: { type: Date },
     notes: { type: String },
     brandColors: [{ type: String }],

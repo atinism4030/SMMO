@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import type { TaskStatus, TaskPriority, PaymentStatus, ContentStatus, ClientStatus, ContentType } from '@/types';
 import {
   getTaskStatusColor,
+  getTaskStatusDot,
   getTaskStatusLabel,
   getPriorityColor,
   getPaymentStatusColor,
@@ -25,17 +26,9 @@ export function Badge({ children, className }: BadgeProps) {
 }
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  const dotColors: Record<TaskStatus, string> = {
-    CONTENT_PREPARATION: 'bg-blue-400',
-    QUALITY_ASSURANCE:   'bg-yellow-400',
-    POST_VERIFIED:       'bg-green-400',
-    READY_TO_POST:       'bg-purple-400',
-    POSTED:              'bg-emerald-400',
-    NEEDS_FIX:           'bg-red-400',
-  };
   return (
     <Badge className={cn('border', getTaskStatusColor(status))}>
-      <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', dotColors[status])} />
+      <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', getTaskStatusDot(status))} />
       {getTaskStatusLabel(status)}
     </Badge>
   );
@@ -69,8 +62,12 @@ export function ContentStatusBadge({ status }: { status: ContentStatus }) {
 }
 
 export function ClientStatusBadge({ status }: { status: ClientStatus }) {
-  const labels: Record<ClientStatus, string> = { ACTIVE: 'Active', PAUSED: 'Paused', CLOSED: 'Closed' };
-  return <Badge className={cn('border', getClientStatusColor(status))}>{labels[status]}</Badge>;
+  const labels: Record<ClientStatus, string> = {
+    LEAD: 'Lead', OFFER_SENT: 'Offer Sent', WAITING_RESPONSE: 'Waiting',
+    ACCEPTED: 'Accepted', ACTIVE: 'Active', REJECTED: 'Rejected',
+    PAUSED: 'Paused', CLOSED: 'Closed',
+  };
+  return <Badge className={cn('border', getClientStatusColor(status))}>{labels[status] ?? status}</Badge>;
 }
 
 export function PlatformBadge({ platform }: { platform: string }) {

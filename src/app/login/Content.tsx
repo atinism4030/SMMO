@@ -16,26 +16,16 @@ export default function LoginContent() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? 'Login failed. Please check your credentials.');
-        return;
-      }
-
-      if (data.user.role === 'CEO') {
-        router.push('/dashboard');
-      } else {
-        router.push('/worker/dashboard');
-      }
+      if (!res.ok) { setError(data.error ?? 'Login failed. Please check your credentials.'); return; }
+      if (data.user.role === 'CEO') router.push('/dashboard');
+      else router.push('/worker/dashboard');
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -43,51 +33,47 @@ export default function LoginContent() {
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(ellipse at center, #6366f1 0%, transparent 70%)' }} />
-      </div>
+  const inputClass = "w-full py-2.5 rounded-lg text-sm border border-zinc-800 bg-zinc-950 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:ring-1 focus:ring-white/10 transition-colors";
 
-      <div className="w-full max-w-sm relative">
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-black">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-black font-bold text-2xl mb-4 shadow-lg">
             S
           </div>
-          <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>SMMO</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Social Media Management Organization</p>
+          <h1 className="text-2xl font-bold mb-1 text-white">SMMO</h1>
+          <p className="text-sm text-zinc-600">Social Media Management Organization</p>
         </div>
 
-        <div className="rounded-2xl border p-8" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <h2 className="text-lg font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>Sign In</h2>
+        <div className="rounded-2xl border border-zinc-900 bg-zinc-950 p-8">
+          <h2 className="text-base font-semibold mb-6 text-white">Sign In</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Email</label>
+              <label className="text-xs font-medium text-zinc-400">Email</label>
               <div className="relative">
-                <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <input
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="you@company.com" required
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
-                  style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                  className={`${inputClass} pl-9 pr-4`}
+                />
               </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Password</label>
+              <label className="text-xs font-medium text-zinc-400">Password</label>
               <div className="relative">
-                <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <input
+                  type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" required
-                  className="w-full pl-9 pr-10 py-2.5 rounded-lg text-sm border transition-colors focus:border-indigo-500 placeholder:text-slate-600"
-                  style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                  className={`${inputClass} pl-9 pr-10`}
+                />
                 <button type="button" onClick={() => setShowPassword(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400">
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
@@ -99,9 +85,9 @@ export default function LoginContent() {
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+            <button
+              type="submit" disabled={loading}
+              className="w-full py-2.5 rounded-lg text-sm font-semibold bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>

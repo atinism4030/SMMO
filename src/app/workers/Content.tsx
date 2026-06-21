@@ -119,14 +119,14 @@ export default function WorkersContent() {
               <div key={w._id} className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>
+                    style={{ background: '#222222', color: '#ffffff' }}>
                     {getInitials(w.name)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{w.name}</p>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Worker</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400">Worker</span>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${w.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${w.status === 'ACTIVE' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-900 text-zinc-500'}`}>
                     {w.status}
                   </span>
                 </div>
@@ -155,7 +155,7 @@ export default function WorkersContent() {
                     <Lock size={12} />Reset Password
                   </button>
                   <button onClick={() => toggleStatus(w)}
-                    className={`w-full py-1.5 rounded-lg text-xs transition-colors ${w.status === 'ACTIVE' ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
+                    className={`w-full py-1.5 rounded-lg text-xs transition-colors ${w.status === 'ACTIVE' ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
                     {w.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>

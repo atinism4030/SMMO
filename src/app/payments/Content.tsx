@@ -103,9 +103,9 @@ export default function PaymentsContent() {
         actions={<Button onClick={() => { setEditPayment(null); setForm(emptyForm); setShowForm(true); }}><Plus size={14} />Add Payment</Button>} />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Expected This Month" value={formatCurrency(totalExpected)} icon={DollarSign} iconColor="text-indigo-400" />
-          <StatCard label="Total Paid" value={formatCurrency(totalPaid)} icon={CreditCard} iconColor="text-emerald-400" />
-          <StatCard label="Unpaid" value={formatCurrency(totalUnpaid)} icon={Clock} iconColor="text-yellow-400" />
+          <StatCard label="Expected This Month" value={formatCurrency(totalExpected)} icon={DollarSign} iconColor="text-zinc-400" />
+          <StatCard label="Total Paid" value={formatCurrency(totalPaid)} icon={CreditCard} iconColor="text-zinc-400" />
+          <StatCard label="Unpaid" value={formatCurrency(totalUnpaid)} icon={Clock} iconColor="text-zinc-400" />
           <StatCard label="Late Payments" value={totalLate} icon={AlertCircle} iconColor="text-red-400" />
         </div>
 
@@ -130,7 +130,7 @@ export default function PaymentsContent() {
         {loading ? <LoadingSpinner fullPage /> : payments.length === 0 ? (
           <EmptyState title="No payments found" icon={CreditCard} description="Add payment records for your clients" action={<Button onClick={() => setShowForm(true)}><Plus size={14} />Add Payment</Button>} />
         ) : (
-          <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+          <div className="rounded-xl border overflow-x-auto" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <table className="w-full">
               <thead>
                 <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
@@ -143,7 +143,7 @@ export default function PaymentsContent() {
                 {payments.map(p => {
                   const client = p.clientId as IClient;
                   return (
-                    <tr key={p._id} className="hover:bg-white/3 transition-colors">
+                    <tr key={p._id} className="hover:bg-zinc-900 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{client?.name}</td>
                       <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{formatMonthYear(p.month, p.year)}</td>
                       <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(p.amount, p.currency)}</td>
@@ -153,7 +153,7 @@ export default function PaymentsContent() {
                       <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{p.paymentMethod ?? '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          {p.status !== 'PAID' && <button onClick={() => quickStatus(p._id, 'PAID')} className="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">Paid</button>}
+                          {p.status !== 'PAID' && <button onClick={() => quickStatus(p._id, 'PAID')} className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">Paid</button>}
                           {p.status !== 'LATE' && p.status !== 'PAID' && <button onClick={() => quickStatus(p._id, 'LATE')} className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">Late</button>}
                           <button onClick={() => openEdit(p)} className="p-1 rounded" style={{ color: 'var(--text-muted)' }}><Edit2 size={12} /></button>
                           <button onClick={() => setDeleteTarget(p)} className="p-1 rounded text-red-400 hover:text-red-300"><Trash2 size={12} /></button>
@@ -172,16 +172,16 @@ export default function PaymentsContent() {
         footer={<><Button variant="secondary" onClick={() => { setShowForm(false); setEditPayment(null); }}>Cancel</Button><Button onClick={handleSave} loading={saving}>{editPayment ? 'Save' : 'Add Payment'}</Button></>}>
         <form onSubmit={handleSave} className="space-y-4">
           <Select label="Client *" value={form.clientId} onChange={f('clientId')} options={[{ value: '', label: '— Select Client —' }, ...clients.map(c => ({ value: c._id, label: c.name }))]} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select label="Month" value={form.month} onChange={f('month')} options={MONTHS_OPTS} />
             <Select label="Year" value={form.year} onChange={f('year')} options={YEARS_OPTS} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Amount *" type="number" value={form.amount} onChange={f('amount')} required placeholder="1500" />
             <Input label="Currency" value={form.currency} onChange={f('currency')} placeholder="USD" />
           </div>
           <Select label="Status" value={form.status} onChange={f('status')} options={[{ value: 'UNPAID', label: 'Unpaid' }, { value: 'PAID', label: 'Paid' }, { value: 'PARTIAL', label: 'Partial' }, { value: 'LATE', label: 'Late' }]} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input label="Due Date" type="date" value={form.dueDate} onChange={f('dueDate')} />
             <Input label="Paid Date" type="date" value={form.paidDate} onChange={f('paidDate')} />
           </div>

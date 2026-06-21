@@ -29,7 +29,7 @@ export default function MyTasksContent() {
           {['', 'CONTENT_PREPARATION', 'QUALITY_ASSURANCE', 'POST_VERIFIED', 'READY_TO_POST', 'POSTED', 'NEEDS_FIX'].map(s => (
             <button key={s} onClick={() => setFilter(s)}
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
-              style={{ background: filter === s ? 'rgba(99,102,241,0.2)' : 'var(--bg-card)', borderColor: filter === s ? '#6366f1' : 'var(--border)', color: filter === s ? '#a5b4fc' : 'var(--text-secondary)' }}>
+              style={{ background: filter === s ? 'rgba(255,255,255,0.1)' : 'var(--bg-card)', borderColor: filter === s ? '#ffffff' : 'var(--border)', color: filter === s ? '#ffffff' : 'var(--text-secondary)' }}>
               {s || 'All'}
             </button>
           ))}
@@ -44,7 +44,7 @@ export default function MyTasksContent() {
               const overdue = isOverdue(task.scheduledDate ?? task.deadline) && task.status !== 'POSTED';
               return (
                 <Link key={task._id} href={`/worker/tasks/${task._id}`}
-                  className="flex items-center gap-4 p-4 rounded-xl border hover:border-indigo-500/30 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl border hover:border-zinc-700 transition-all"
                   style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">

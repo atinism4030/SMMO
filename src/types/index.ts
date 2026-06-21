@@ -1,7 +1,17 @@
 export type UserRole = 'CEO' | 'WORKER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
-export type ClientStatus = 'ACTIVE' | 'PAUSED' | 'CLOSED';
+export type ClientStatus =
+  | 'LEAD'
+  | 'OFFER_SENT'
+  | 'WAITING_RESPONSE'
+  | 'ACCEPTED'
+  | 'ACTIVE'
+  | 'REJECTED'
+  | 'PAUSED'
+  | 'CLOSED';
+
+export type DocLang = 'en' | 'sq' | 'mk';
 
 export type AgreementType = 'OFFER' | 'CONTRACT' | 'INVOICE' | 'OTHER';
 
@@ -68,6 +78,18 @@ export interface IClient {
   logoUrl?: string;
   driveFolderUrl?: string;
   isDemo?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IGeneratedDocument {
+  _id: string;
+  clientId: string;
+  documentType: 'offer' | 'agreement';
+  language: DocLang;
+  title: string;
+  generatedBy: string | IUser;
+  documentData: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }

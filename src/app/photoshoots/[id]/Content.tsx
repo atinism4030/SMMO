@@ -16,21 +16,21 @@ import {
 import toast from 'react-hot-toast';
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  PLANNED:     { bg: 'rgba(99,102,241,0.12)', text: '#818cf8' },
-  IN_PROGRESS: { bg: 'rgba(245,158,11,0.12)', text: '#fbbf24' },
-  COMPLETED:   { bg: 'rgba(16,185,129,0.12)', text: '#34d399' },
-  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',  text: '#f87171' },
+  PLANNED:     { bg: 'rgba(255,255,255,0.04)', text: 'var(--text-secondary)' },
+  IN_PROGRESS: { bg: 'rgba(255,255,255,0.06)', text: '#d4d4d8' },
+  COMPLETED:   { bg: 'rgba(255,255,255,0.04)', text: '#a1a1aa' },
+  CANCELLED:   { bg: 'rgba(239,68,68,0.12)',   text: '#f87171' },
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  LOW: '#6b7280', MEDIUM: '#3b82f6', HIGH: '#f97316', URGENT: '#ef4444',
+  LOW: '#52525b', MEDIUM: '#71717a', HIGH: '#a1a1aa', URGENT: '#ef4444',
 };
 
 function progressColor(pct: number) {
-  if (pct >= 100) return '#34d399';
-  if (pct >= 60)  return '#6366f1';
-  if (pct >= 30)  return '#f59e0b';
-  return '#f87171';
+  if (pct >= 100) return '#a1a1aa';
+  if (pct >= 60)  return '#ffffff';
+  if (pct >= 30)  return '#71717a';
+  return '#ef4444';
 }
 
 export default function PhotoshootDetailContent({
@@ -265,9 +265,9 @@ export default function PhotoshootDetailContent({
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Workers:</p>
               {workers.map(w => (
                 <span key={String(w._id)} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
-                  style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc' }}>
+                  style={{ background: 'rgba(255,255,255,0.05)', color: '#ffffff' }}>
                   <span className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
-                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white' }}>
+                    style={{ background: 'linear-gradient(135deg,#ffffff,#ffffff)', color: 'white' }}>
                     {w.name.charAt(0).toUpperCase()}
                   </span>
                   {w.name}
@@ -300,7 +300,7 @@ export default function PhotoshootDetailContent({
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
             <div>
               <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                <CheckSquare size={14} className="inline mr-2 text-indigo-400" />
+                <CheckSquare size={14} className="inline mr-2 text-zinc-400" />
                 Shot List
               </h2>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -420,7 +420,7 @@ function LabelSelect({ label, children, ...props }: React.SelectHTMLAttributes<H
       {label && <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>}
       <select
         {...props}
-        className="w-full px-3 py-2.5 rounded-lg text-sm border focus:border-indigo-500 cursor-pointer"
+        className="w-full px-3 py-2.5 rounded-lg text-sm border focus:border-zinc-500 cursor-pointer"
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
       >
         {children}
@@ -480,7 +480,7 @@ function ShotRow({ shot, onToggle, toggling, onDelete, deleting, onEdit }: {
   return (
     <div
       className="px-5 py-3.5 flex items-start gap-4 group border-t transition-colors hover:bg-opacity-50"
-      style={{ borderColor: 'var(--border)', background: shot.completed ? 'rgba(16,185,129,0.03)' : 'transparent' }}
+      style={{ borderColor: 'var(--border)', background: shot.completed ? 'rgba(255,255,255,0.02)' : 'transparent' }}
     >
       {/* Checkbox */}
       <button
@@ -531,7 +531,7 @@ function ShotRow({ shot, onToggle, toggling, onDelete, deleting, onEdit }: {
 
       {/* Priority + actions */}
       <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={onEdit} className="p-1 rounded-md" style={{ color: '#6366f1' }} title="Edit shot">
+        <button onClick={onEdit} className="p-1 rounded-md" style={{ color: '#ffffff' }} title="Edit shot">
           <Edit3 size={12} />
         </button>
         <button onClick={onDelete} disabled={deleting} className="p-1 rounded-md" style={{ color: '#f87171' }} title="Remove shot">

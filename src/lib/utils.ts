@@ -26,26 +26,26 @@ export function isOverdue(deadline: string | Date | undefined): boolean {
 
 export function getTaskStatusColor(status: TaskStatus): string {
   const map: Record<TaskStatus, string> = {
-    CONTENT_PREPARATION: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    QUALITY_ASSURANCE:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    POST_VERIFIED:       'bg-green-500/20 text-green-400 border-green-500/30',
-    READY_TO_POST:       'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    POSTED:              'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    NEEDS_FIX:           'bg-red-500/20 text-red-400 border-red-500/30',
+    CONTENT_PREPARATION: 'bg-zinc-900 text-zinc-500 border-zinc-800',
+    QUALITY_ASSURANCE:   'bg-zinc-900 text-zinc-400 border-zinc-800',
+    POST_VERIFIED:       'bg-zinc-800 text-zinc-300 border-zinc-700',
+    READY_TO_POST:       'bg-zinc-700 text-white border-zinc-600',
+    POSTED:              'bg-white text-black border-transparent',
+    NEEDS_FIX:           'bg-zinc-900 text-red-400 border-red-900/60',
   };
-  return map[status] ?? 'bg-gray-500/20 text-gray-400';
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
 }
 
 export function getTaskStatusDot(status: TaskStatus): string {
   const map: Record<TaskStatus, string> = {
-    CONTENT_PREPARATION: 'bg-blue-400',
-    QUALITY_ASSURANCE:   'bg-yellow-400',
-    POST_VERIFIED:       'bg-green-400',
-    READY_TO_POST:       'bg-purple-400',
-    POSTED:              'bg-emerald-400',
+    CONTENT_PREPARATION: 'bg-zinc-600',
+    QUALITY_ASSURANCE:   'bg-zinc-500',
+    POST_VERIFIED:       'bg-zinc-400',
+    READY_TO_POST:       'bg-zinc-200',
+    POSTED:              'bg-black',
     NEEDS_FIX:           'bg-red-400',
   };
-  return map[status] ?? 'bg-gray-400';
+  return map[status] ?? 'bg-zinc-500';
 }
 
 export function getTaskStatusLabel(status: TaskStatus): string {
@@ -62,69 +62,58 @@ export function getTaskStatusLabel(status: TaskStatus): string {
 
 export function getPriorityColor(priority: TaskPriority): string {
   const map: Record<TaskPriority, string> = {
-    LOW:    'bg-slate-500/20 text-slate-400 border-slate-500/30',
-    MEDIUM: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    HIGH:   'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    URGENT: 'bg-red-500/20 text-red-400 border-red-500/30',
+    LOW:    'bg-zinc-900 text-zinc-600 border-zinc-800',
+    MEDIUM: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+    HIGH:   'bg-zinc-800 text-zinc-200 border-zinc-700',
+    URGENT: 'bg-zinc-900 text-red-400 border-red-900/60',
   };
-  return map[priority] ?? 'bg-slate-500/20 text-slate-400';
+  return map[priority] ?? 'bg-zinc-900 text-zinc-500';
 }
 
 export function getPaymentStatusColor(status: PaymentStatus): string {
   const map: Record<PaymentStatus, string> = {
-    PAID:    'bg-green-500/20 text-green-400 border-green-500/30',
-    UNPAID:  'bg-gray-500/20 text-gray-400 border-gray-500/30',
-    PARTIAL: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    LATE:    'bg-red-500/20 text-red-400 border-red-500/30',
+    PAID:    'bg-white text-black border-transparent',
+    UNPAID:  'bg-zinc-900 text-zinc-500 border-zinc-800',
+    PARTIAL: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+    LATE:    'bg-zinc-900 text-red-400 border-red-900/60',
   };
-  return map[status] ?? 'bg-gray-500/20 text-gray-400';
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
 }
 
 export function getContentStatusColor(status: ContentStatus): string {
   const map: Record<ContentStatus, string> = {
-    IDEA:             'bg-slate-500/20 text-slate-400',
-    IN_PRODUCTION:    'bg-blue-500/20 text-blue-400',
-    EDITING:          'bg-indigo-500/20 text-indigo-400',
-    WAITING_APPROVAL: 'bg-yellow-500/20 text-yellow-400',
-    APPROVED:         'bg-green-500/20 text-green-400',
-    SCHEDULED:        'bg-purple-500/20 text-purple-400',
-    POSTED:           'bg-emerald-500/20 text-emerald-400',
-    REPORTED:         'bg-teal-500/20 text-teal-400',
+    IDEA:             'bg-zinc-900 text-zinc-600',
+    IN_PRODUCTION:    'bg-zinc-900 text-zinc-400',
+    EDITING:          'bg-zinc-800 text-zinc-300',
+    WAITING_APPROVAL: 'bg-zinc-800 text-zinc-200',
+    APPROVED:         'bg-zinc-700 text-white',
+    SCHEDULED:        'bg-zinc-700 text-white',
+    POSTED:           'bg-white text-black',
+    REPORTED:         'bg-zinc-900 text-zinc-500',
   };
-  return map[status] ?? 'bg-slate-500/20 text-slate-400';
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
 }
 
 export function getClientStatusColor(status: ClientStatus): string {
   const map: Record<ClientStatus, string> = {
-    ACTIVE: 'bg-green-500/20 text-green-400 border-green-500/30',
-    PAUSED: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    CLOSED: 'bg-red-500/20 text-red-400 border-red-500/30',
+    LEAD:             'bg-zinc-900 text-zinc-500 border-zinc-800',
+    OFFER_SENT:       'bg-zinc-800 text-zinc-400 border-zinc-700',
+    WAITING_RESPONSE: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+    ACCEPTED:         'bg-zinc-700 text-white border-zinc-600',
+    ACTIVE:           'bg-white text-black border-transparent',
+    REJECTED:         'bg-zinc-900 text-zinc-700 border-zinc-800',
+    PAUSED:           'bg-zinc-800 text-zinc-400 border-zinc-700',
+    CLOSED:           'bg-zinc-900 text-zinc-800 border-zinc-800',
   };
-  return map[status] ?? 'bg-gray-500/20 text-gray-400';
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
 }
 
 export function getPlatformColor(platform: string): string {
-  const map: Record<string, string> = {
-    Instagram: 'bg-pink-500/20 text-pink-400',
-    Facebook:  'bg-blue-600/20 text-blue-400',
-    TikTok:    'bg-slate-500/20 text-slate-300',
-    YouTube:   'bg-red-600/20 text-red-400',
-    Website:   'bg-teal-500/20 text-teal-400',
-  };
-  return map[platform] ?? 'bg-slate-500/20 text-slate-400';
+  return 'bg-zinc-800 text-zinc-300';
 }
 
 export function getContentTypeColor(type: ContentType): string {
-  const map: Record<ContentType, string> = {
-    POST:      'bg-indigo-500/20 text-indigo-300',
-    REEL:      'bg-pink-500/20 text-pink-300',
-    STORY:     'bg-amber-500/20 text-amber-300',
-    CAROUSEL:  'bg-violet-500/20 text-violet-300',
-    VIDEO:     'bg-red-500/20 text-red-300',
-    PHOTO:     'bg-teal-500/20 text-teal-300',
-    OTHER:     'bg-gray-500/20 text-gray-300',
-  };
-  return map[type] ?? 'bg-slate-500/20 text-slate-400';
+  return 'bg-zinc-900 text-zinc-400';
 }
 
 export function getInitials(name: string): string {

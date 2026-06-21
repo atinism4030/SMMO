@@ -20,8 +20,8 @@ export function Input({ label, error, helper, className, id, ...props }: InputPr
         {...props}
         className={cn(
           'w-full px-3 py-2.5 rounded-lg text-sm transition-colors',
-          'border focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30',
-          'placeholder:text-slate-600',
+          'border focus:border-zinc-500 focus:ring-1 focus:ring-white/10',
+          'placeholder:text-zinc-600',
           error ? 'border-red-500/50' : '',
           className
         )}
@@ -52,8 +52,8 @@ export function Textarea({ label, error, className, id, ...props }: TextareaProp
         {...props}
         className={cn(
           'w-full px-3 py-2.5 rounded-lg text-sm transition-colors resize-none',
-          'border focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30',
-          'placeholder:text-slate-600',
+          'border focus:border-zinc-500 focus:ring-1 focus:ring-white/10',
+          'placeholder:text-zinc-600',
           error ? 'border-red-500/50' : '',
           className
         )}
@@ -84,7 +84,7 @@ export function Select({ label, error, options, className, id, ...props }: Selec
         {...props}
         className={cn(
           'w-full px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer',
-          'border focus:border-indigo-500',
+          'border focus:border-zinc-500',
           error ? 'border-red-500/50' : '',
           className
         )}

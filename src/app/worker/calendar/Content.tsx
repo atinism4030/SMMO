@@ -64,9 +64,9 @@ export default function WorkerCalendarContent() {
                     const date = task.scheduledDate ?? task.deadline;
                     const daysLeft = date ? Math.ceil((new Date(date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
                     return (
-                      <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-4 p-3 rounded-lg border hover:border-indigo-500/30 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                        <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: daysLeft <= 1 ? 'rgba(239,68,68,0.15)' : daysLeft <= 3 ? 'rgba(245,158,11,0.15)' : 'var(--bg-elevated)' }}>
-                          <span className={`text-sm font-bold ${daysLeft <= 1 ? 'text-red-400' : daysLeft <= 3 ? 'text-yellow-400' : 'text-indigo-400'}`}>{daysLeft}</span>
+                      <Link key={task._id} href={`/worker/tasks/${task._id}`} className="flex items-center gap-4 p-3 rounded-lg border hover:border-zinc-700 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                        <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0" style={{ background: daysLeft <= 1 ? 'rgba(239,68,68,0.15)' : 'var(--bg-elevated)' }}>
+                          <span className={`text-sm font-bold ${daysLeft <= 1 ? 'text-red-400' : 'text-zinc-400'}`}>{daysLeft}</span>
                           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>days</span>
                         </div>
                         <div className="flex-1 min-w-0">

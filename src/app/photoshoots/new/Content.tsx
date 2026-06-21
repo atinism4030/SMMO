@@ -190,12 +190,12 @@ export default function NewPhotoshootContent() {
                       onClick={() => toggleWorker(w._id)}
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all border"
                       style={selected
-                        ? { background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', borderColor: '#6366f1' }
+                        ? { background: 'rgba(255,255,255,0.1)', color: '#ffffff', borderColor: '#ffffff' }
                         : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }
                       }
                     >
                       <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white' }}>
+                        style={{ background: '#222222', color: '#ffffff' }}>
                         {w.name.charAt(0).toUpperCase()}
                       </span>
                       {w.name}
@@ -219,7 +219,7 @@ export default function NewPhotoshootContent() {
                     onClick={() => toggleEquipment(eq.value)}
                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
                     style={sel
-                      ? { background: 'rgba(16,185,129,0.15)', color: '#34d399', borderColor: '#10b981' }
+                      ? { background: 'rgba(255,255,255,0.1)', color: '#ffffff', borderColor: '#ffffff' }
                       : { background: 'var(--bg-elevated)', color: 'var(--text-muted)', borderColor: 'var(--border)' }
                     }
                   >
@@ -322,7 +322,7 @@ export default function NewPhotoshootContent() {
                 <button
                   type="button"
                   onClick={addShot}
-                  className="w-full py-3 rounded-xl border-2 border-dashed text-sm font-medium transition-all hover:border-indigo-500 hover:text-indigo-400"
+                  className="w-full py-3 rounded-xl border-2 border-dashed text-sm font-medium transition-all hover:border-zinc-500 hover:text-white"
                   style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                 >
                   <Plus size={14} className="inline mr-1" /> Add Shot
@@ -363,7 +363,7 @@ function LabelSelect({ label, children, ...props }: React.SelectHTMLAttributes<H
       {label && <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>}
       <select
         {...props}
-        className="w-full px-3 py-2.5 rounded-lg text-sm border focus:border-indigo-500 cursor-pointer"
+        className="w-full px-3 py-2.5 rounded-lg text-sm border focus:border-zinc-500 cursor-pointer"
         style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
       >
         {children}
@@ -382,7 +382,7 @@ function Section({ title, icon, action, children }: {
     <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          {icon && <span style={{ color: '#818cf8' }}>{icon}</span>}
+          {icon && <span style={{ color: 'var(--text-secondary)' }}>{icon}</span>}
           {title}
         </h2>
         {action}

@@ -60,6 +60,52 @@ After logging in as CEO:
 
 ---
 
+## Database Reset
+
+> **WARNING:** This permanently deletes ALL SMMO data from the connected MongoDB database.
+> Use only for development or when you want a completely fresh start.
+
+### Run the reset command
+
+```bash
+npm run reset-db -- --confirm
+```
+
+Without `--confirm` the script prints a warning and exits safely without touching the database.
+
+### What gets deleted
+
+| Collection | Contents |
+|---|---|
+| users | All CEO and Worker accounts |
+| clients | All clients |
+| boards | All monthly boards |
+| tasks | All content tasks |
+| payments | All payment records |
+| agreements | All agreements and documents |
+| generateddocuments | All generated PDFs (metadata) |
+| activitylogs | All activity history |
+| contentitems | All content calendar items |
+| photoshootsessions | All photoshoot sessions |
+| reports | All report records |
+
+### First use after reset
+
+```bash
+npm run reset-db -- --confirm   # 1. Reset
+npm run dev                      # 2. Start app
+```
+
+3. Open `http://localhost:3000`
+4. You will be redirected to `/setup`
+5. Create your CEO/Admin account (no default user is seeded)
+6. Log in
+7. Create workers manually via the Workers page
+8. Create clients manually via the Clients page
+9. Start using SMMO from the beginning
+
+---
+
 ## Roles
 
 | Role   | Access |
