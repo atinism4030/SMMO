@@ -66,6 +66,112 @@ function makeAgreementForm() {
 type OfferForm = ReturnType<typeof makeOfferForm>;
 type AgreementForm = ReturnType<typeof makeAgreementForm>;
 
+const LANG_LABEL: Record<string, string> = { en: 'EN', sq: 'SQ', mk: 'MK' };
+
+function GeneratedDocCard({ doc, isLatest, client }: { doc: IGeneratedDocument; isLatest: boolean; client: IClient }) {
+  const [downloading, setDownloading] = useState(false);
+
+  async function redownload() {
+    setDownloading(true);
+    try {
+      const data = doc.documentData as Record<string, unknown>;
+      if (doc.documentType === 'offer') {
+        const { generateOfferPDF } = await import('@/lib/offerPDF');
+        await generateOfferPDF({
+          clientName: client.name,
+          contactPerson: client.contactPerson,
+          date: fmtDateDisplay(data.date as string),
+          packageName: (data.packageName as string) ?? '',
+          posts: (data.posts as number) ?? 0,
+          reels: (data.reels as number) ?? 0,
+          stories: (data.stories as number) ?? 0,
+          photoshoots: (data.photoshoots as number) ?? 0,
+          videoProduction: (data.videoProduction as number) ?? 0,
+          droneShots: (data.droneShots as number) ?? 0,
+          platforms: (data.platforms as string[]) ?? [],
+          additionalServices: (data.additionalServices as string) ?? '',
+          realPackagePrice: (data.realPackagePrice as number) ?? 0,
+          offeredPrice: (data.offeredPrice as number) ?? 0,
+          discountPercent: (data.discountPercent as number) ?? 0,
+          currency: (data.currency as string) ?? 'EUR',
+          boostBudget: (data.boostBudget as string) ?? '',
+          sponsoredContent: (data.sponsoredContent as boolean) ?? false,
+          durationMonths: (data.durationMonths as number) ?? 6,
+          notes: (data.notes as string) ?? '',
+          lang: doc.language,
+        });
+      } else {
+        const { generateAgreementPDF } = await import('@/lib/agreementPDF');
+        await generateAgreementPDF({
+          clientName: client.name,
+          contactPerson: client.contactPerson,
+          agreementDate: fmtDateDisplay(data.agreementDate as string),
+          startDate: fmtDateDisplay(data.startDate as string),
+          durationMonths: (data.durationMonths as number) ?? 6,
+          platforms: (data.platforms as string[]) ?? [],
+          postsMin: (data.postsMin as number) ?? 0,
+          postsMax: (data.postsMax as number) ?? 0,
+          reelsMin: (data.reelsMin as number) ?? 0,
+          reelsMax: (data.reelsMax as number) ?? 0,
+          storiesMin: (data.storiesMin as number) ?? 0,
+          storiesMax: (data.storiesMax as number) ?? 0,
+          photoshoots: (data.photoshoots as number) ?? 0,
+          videoProduction: (data.videoProduction as number) ?? 0,
+          droneShots: (data.droneShots as number) ?? 0,
+          additionalServices: (data.additionalServices as string) ?? '',
+          boostBudget: (data.boostBudget as string) ?? '',
+          monthlyPrice: (data.monthlyPrice as number) ?? 0,
+          currency: (data.currency as string) ?? 'EUR',
+          terminationNoticeDays: (data.terminationNoticeDays as number) ?? 30,
+          governingLaw: (data.governingLaw as string) ?? 'Republic of North Macedonia',
+          lang: doc.language,
+        });
+      }
+      toast.success('PDF downloaded');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Download failed: ${msg}`);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-xl border transition-colors" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-elevated)' }}>
+        <FileText size={15} style={{ color: 'var(--text-muted)' }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{doc.title}</p>
+          {isLatest && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.15)' }}>
+              Latest
+            </span>
+          )}
+        </div>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          {formatDate(doc.createdAt)}
+        </p>
+      </div>
+      <span className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
+        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+        {LANG_LABEL[doc.language] ?? doc.language.toUpperCase()}
+      </span>
+      <button
+        onClick={redownload}
+        disabled={downloading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex-shrink-0"
+        style={{ borderColor: 'var(--border)', color: downloading ? 'var(--text-muted)' : 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+        title="Re-download PDF">
+        <FileDown size={12} />
+        {downloading ? 'Generating...' : 'Download'}
+      </button>
+    </div>
+  );
+}
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-widest mt-5 mb-2 pb-1 border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -118,6 +224,28 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
   const [userRole, setUserRole] = useState<'CEO' | 'WORKER' | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
+
+  // Quick status change (CEO only)
+  const [changingStatus, setChangingStatus] = useState(false);
+
+  async function handleStatusChange(newStatus: string) {
+    if (!client) return;
+    setChangingStatus(true);
+    try {
+      const res = await fetch(`/api/clients/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? 'Failed to update status'); return; }
+      setClient(data.client);
+      toast.success('Status updated');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setChangingStatus(false);
+    }
+  }
 
   // Legacy agreement form
   const [showAgreementForm, setShowAgreementForm] = useState(false);
@@ -359,6 +487,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
 
         <div className="p-6">
           {tab === 'overview' && (
+            <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                 <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Client Info</h3>
@@ -398,6 +527,34 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
                 )}
               </div>
             </div>
+
+            {/* Quick Status Change — CEO only */}
+            {userRole === 'CEO' && (
+              <div className="mt-4 rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Client Status</h3>
+                <select
+                  value={client.status}
+                  onChange={e => handleStatusChange(e.target.value)}
+                  disabled={changingStatus}
+                  className="w-full px-3 py-2.5 rounded-lg text-sm border"
+                  style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+                  {[
+                    { value: 'LEAD',             label: 'Lead' },
+                    { value: 'OFFER_SENT',        label: 'Offer Sent' },
+                    { value: 'WAITING_RESPONSE',  label: 'Waiting Response' },
+                    { value: 'ACCEPTED',          label: 'Accepted' },
+                    { value: 'ACTIVE',            label: 'Active' },
+                    { value: 'INACTIVE',          label: 'Inactive' },
+                    { value: 'PAUSED',            label: 'Paused' },
+                    { value: 'REJECTED',          label: 'Rejected' },
+                    { value: 'CLOSED',            label: 'Closed' },
+                  ].map(o => (
+                    <option key={o.value} value={o.value} style={{ background: 'var(--bg-card)' }}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            </>
           )}
 
           {tab === 'boards' && (
@@ -485,8 +642,11 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
 
           {tab === 'documents' && (
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Generated Documents</h3>
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Generated Documents</h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>PDF offers and agreements generated for this client</p>
+                </div>
                 {userRole === 'CEO' && (
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" onClick={() => { setOfferForm(makeOfferForm()); setShowOfferModal(true); }}>
@@ -498,29 +658,63 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
                   </div>
                 )}
               </div>
+
               {generatedDocs.length === 0 ? (
-                <EmptyState title="No generated documents" description="Generate offers or agreements for this client" icon={FileText} />
-              ) : (
-                <div className="space-y-2">
-                  {generatedDocs.map(d => (
-                    <div key={d._id} className="flex items-center gap-4 p-3 rounded-lg border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'var(--bg-elevated)' }}>
-                        <FileText size={14} style={{ color: 'var(--text-muted)' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{d.title}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          {d.documentType === 'offer' ? 'Offer' : 'Agreement'} · {d.language.toUpperCase()} · {formatDate(d.createdAt)}
-                        </p>
-                      </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                        {d.documentType === 'offer' ? 'Offer' : 'Agreement'}
-                      </span>
+                <EmptyState
+                  title="No generated documents"
+                  description={userRole === 'CEO' ? 'Use the buttons above to generate an offer or agreement PDF' : 'No documents have been generated for this client yet'}
+                  icon={FileText}
+                  action={userRole === 'CEO' ? (
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => { setOfferForm(makeOfferForm()); setShowOfferModal(true); }}>
+                        <FileText size={13} />Generate Offer
+                      </Button>
+                      <Button size="sm" onClick={() => { setAgreementPDFForm(makeAgreementForm()); setShowAgreementPDFModal(true); }}>
+                        <FileDown size={13} />Generate Agreement
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  ) : undefined}
+                />
+              ) : (
+                <>
+                  {/* Group: Offers */}
+                  {generatedDocs.filter(d => d.documentType === 'offer').length > 0 && (
+                    <div className="mb-5">
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 pb-1 border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                        Offers
+                      </p>
+                      <div className="space-y-2">
+                        {generatedDocs.filter(d => d.documentType === 'offer').map((d, idx) => (
+                          <GeneratedDocCard
+                            key={d._id}
+                            doc={d}
+                            isLatest={idx === 0}
+                            client={client}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Group: Agreements */}
+                  {generatedDocs.filter(d => d.documentType === 'agreement').length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-widest mb-2 pb-1 border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                        Agreements
+                      </p>
+                      <div className="space-y-2">
+                        {generatedDocs.filter(d => d.documentType === 'agreement').map((d, idx) => (
+                          <GeneratedDocCard
+                            key={d._id}
+                            doc={d}
+                            isLatest={idx === 0}
+                            client={client}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

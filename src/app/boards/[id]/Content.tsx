@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Topbar from '@/components/layout/Topbar';
 import Button from '@/components/ui/Button';
 import { ContentTypeBadge, PlatformBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
+import { ConfirmModal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { formatDate, isOverdue, getContentTypeColor, CONTENT_TYPES, CARD_STATUSES, PLATFORMS } from '@/lib/utils';
-import type { IBoard, ITask, IClient, IUser, TaskStatus, TaskPriority, ContentType } from '@/types';
-import { Plus, ArrowLeft, AlertCircle, CheckSquare, Zap, Camera, Video, FileText } from 'lucide-react';
+import { formatDate, isOverdue, CONTENT_TYPES, CARD_STATUSES, PLATFORMS } from '@/lib/utils';
+import type { IBoard, ITask, IClient, IUser, TaskStatus, TaskPriority, ContentType, BoardStatus } from '@/types';
+import { Plus, ArrowLeft, AlertCircle, CheckSquare, Camera, Video, FileText, Edit2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -20,6 +22,13 @@ const COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
   { key: 'READY_TO_POST',       label: 'Ready to Post',       color: '#d4d4d8' },
   { key: 'POSTED',              label: 'Posted',              color: '#ffffff' },
   { key: 'NEEDS_FIX',           label: 'Needs Fix',           color: '#ef4444' },
+];
+
+const BOARD_STATUS_OPTIONS = [
+  { value: 'DRAFT',     label: 'Draft' },
+  { value: 'ACTIVE',    label: 'Active' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ARCHIVED',  label: 'Archived' },
 ];
 
 const emptyCard = {
@@ -35,27 +44,86 @@ const emptyCard = {
 
 export default function BoardDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [board, setBoard] = useState<IBoard | null>(null);
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [workers, setWorkers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('');
   const [showCardForm, setShowCardForm] = useState(false);
   const [cardForm, setCardForm] = useState(emptyCard);
   const [saving, setSaving] = useState(false);
   const [updatingTask, setUpdatingTask] = useState<string | null>(null);
 
+  // Board edit/delete state
+  const [showEditBoard, setShowEditBoard] = useState(false);
+  const [editBoardForm, setEditBoardForm] = useState({ title: '', description: '', status: 'ACTIVE' as BoardStatus });
+  const [savingBoard, setSavingBoard] = useState(false);
+  const [showDeleteBoard, setShowDeleteBoard] = useState(false);
+  const [deletingBoard, setDeletingBoard] = useState(false);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [boardRes, workersRes] = await Promise.all([fetch(`/api/boards/${id}`), fetch('/api/users')]);
-      const [bd, wd] = await Promise.all([boardRes.json(), workersRes.json()]);
+      const [boardRes, workersRes, meRes] = await Promise.all([
+        fetch(`/api/boards/${id}`),
+        fetch('/api/users'),
+        fetch('/api/auth/me'),
+      ]);
+      const [bd, wd, me] = await Promise.all([boardRes.json(), workersRes.json(), meRes.json()]);
       setBoard(bd.board);
       setTasks(bd.tasks ?? []);
       setWorkers((wd.users ?? []).filter((u: IUser) => u.role === 'WORKER' && u.status === 'ACTIVE'));
+      setUserRole(me.user?.role ?? '');
       setLoading(false);
     }
     load();
   }, [id]);
+
+  function openEditBoard() {
+    if (!board) return;
+    setEditBoardForm({ title: board.title, description: board.description ?? '', status: board.status });
+    setShowEditBoard(true);
+  }
+
+  async function handleEditBoardSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingBoard(true);
+    try {
+      const res = await fetch(`/api/boards/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editBoardForm),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? 'Failed to save'); return; }
+      setBoard(data.board);
+      setShowEditBoard(false);
+      toast.success('Board updated');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setSavingBoard(false);
+    }
+  }
+
+  async function handleDeleteBoard() {
+    setDeletingBoard(true);
+    try {
+      const res = await fetch(`/api/boards/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error ?? 'Failed to delete');
+        return;
+      }
+      toast.success('Board deleted');
+      router.push('/boards');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setDeletingBoard(false);
+      setShowDeleteBoard(false);
+    }
+  }
 
   async function handleCreateCard(e: React.FormEvent) {
     e.preventDefault();
@@ -103,10 +171,18 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
   if (loading) return <div className="flex-1 flex items-center justify-center"><LoadingSpinner size={32} /></div>;
   if (!board) return <div className="p-6 text-red-400">Board not found.</div>;
 
+  const isCEO = userRole === 'CEO';
   const client = board.clientId as IClient;
   const cp = board.contentPlan;
   const totalGenerated = board.autoGeneratedTasksCount ?? 0;
   const postedCount = tasks.filter(t => t.status === 'POSTED').length;
+
+  const boardStatusColor: Record<string, string> = {
+    DRAFT: 'var(--text-muted)',
+    ACTIVE: 'var(--text-primary)',
+    COMPLETED: 'var(--text-secondary)',
+    ARCHIVED: 'var(--text-muted)',
+  };
 
   return (
     <>
@@ -115,7 +191,22 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
         subtitle={client?.name}
         actions={
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setShowCardForm(true)}><Plus size={13} />Add Card</Button>
+            <span className="text-xs px-2 py-1 rounded-full border" style={{ borderColor: 'var(--border)', color: boardStatusColor[board.status] ?? 'var(--text-muted)' }}>
+              {board.status}
+            </span>
+            {isCEO && (
+              <>
+                <Button size="sm" onClick={() => setShowCardForm(true)}><Plus size={13} />Add Card</Button>
+                <Button variant="secondary" size="sm" onClick={openEditBoard}><Edit2 size={13} />Edit Board</Button>
+                <button
+                  onClick={() => setShowDeleteBoard(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-400"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  <Trash2 size={13} />Delete
+                </button>
+              </>
+            )}
+            {!isCEO && <Button size="sm" onClick={() => setShowCardForm(true)}><Plus size={13} />Add Card</Button>}
             <Link href="/boards"><Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button></Link>
           </div>
         }
@@ -270,8 +361,6 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
               onChange={e => setCardForm(p => ({ ...p, priority: e.target.value as TaskPriority }))}
               options={[{ value: 'LOW', label: 'Low' }, { value: 'MEDIUM', label: 'Medium' }, { value: 'HIGH', label: 'High' }, { value: 'URGENT', label: 'Urgent' }]} />
           </div>
-          <Textarea label="Description" value={cardForm.description}
-            onChange={e => setCardForm(p => ({ ...p, description: e.target.value }))} rows={2} />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Assign to Worker" value={cardForm.assignedTo}
               onChange={e => setCardForm(p => ({ ...p, assignedTo: e.target.value }))}
@@ -306,6 +395,30 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
           </div>
         </form>
       </Modal>
+
+      {/* Edit Board Modal */}
+      <Modal open={showEditBoard} onClose={() => setShowEditBoard(false)} title="Edit Board" size="sm"
+        footer={<><Button variant="secondary" onClick={() => setShowEditBoard(false)}>Cancel</Button><Button onClick={handleEditBoardSave} loading={savingBoard}>Save Changes</Button></>}>
+        <form onSubmit={handleEditBoardSave} className="space-y-4">
+          <Input label="Title *" value={editBoardForm.title}
+            onChange={e => setEditBoardForm(p => ({ ...p, title: e.target.value }))} required />
+          <Textarea label="Description" value={editBoardForm.description}
+            onChange={e => setEditBoardForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+          <Select label="Status" value={editBoardForm.status}
+            onChange={e => setEditBoardForm(p => ({ ...p, status: e.target.value as BoardStatus }))}
+            options={BOARD_STATUS_OPTIONS} />
+        </form>
+      </Modal>
+
+      {/* Delete Board Confirmation */}
+      <ConfirmModal
+        open={showDeleteBoard}
+        onClose={() => setShowDeleteBoard(false)}
+        onConfirm={handleDeleteBoard}
+        loading={deletingBoard}
+        title="Delete Board"
+        message={`Are you sure you want to delete "${board.title}"? All cards in this board will also be deleted.`}
+      />
     </>
   );
 }

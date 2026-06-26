@@ -35,6 +35,7 @@ const statusOptions = [
   { value: 'WAITING_RESPONSE', label: 'Waiting Response' },
   { value: 'ACCEPTED', label: 'Accepted' },
   { value: 'ACTIVE', label: 'Active' },
+  { value: 'INACTIVE', label: 'Inactive' },
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'PAUSED', label: 'Paused' },
   { value: 'CLOSED', label: 'Closed' },

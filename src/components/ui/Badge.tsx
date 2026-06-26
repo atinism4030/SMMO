@@ -64,7 +64,7 @@ export function ContentStatusBadge({ status }: { status: ContentStatus }) {
 export function ClientStatusBadge({ status }: { status: ClientStatus }) {
   const labels: Record<ClientStatus, string> = {
     LEAD: 'Lead', OFFER_SENT: 'Offer Sent', WAITING_RESPONSE: 'Waiting',
-    ACCEPTED: 'Accepted', ACTIVE: 'Active', REJECTED: 'Rejected',
+    ACCEPTED: 'Accepted', ACTIVE: 'Active', INACTIVE: 'Inactive', REJECTED: 'Rejected',
     PAUSED: 'Paused', CLOSED: 'Closed',
   };
   return <Badge className={cn('border', getClientStatusColor(status))}>{labels[status] ?? status}</Badge>;

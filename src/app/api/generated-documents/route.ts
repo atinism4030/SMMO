@@ -8,11 +8,22 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await connectDB();
-  const clientId = request.nextUrl.searchParams.get('clientId');
-  if (!clientId) return NextResponse.json({ error: 'clientId required' }, { status: 400 });
 
-  const docs = await GeneratedDocument.find({ clientId })
+  const clientId = request.nextUrl.searchParams.get('clientId');
+  const docType = request.nextUrl.searchParams.get('type'); // 'offer' | 'agreement' | null
+
+  const filter: Record<string, unknown> = {};
+  if (clientId) filter.clientId = clientId;
+  if (docType) filter.documentType = docType;
+
+  // Non-CEO users can only see docs for their own client context (clientId must be provided)
+  if (session.role !== 'CEO' && !clientId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const docs = await GeneratedDocument.find(filter)
     .sort({ createdAt: -1 })
+    .populate('clientId', 'name')
     .populate('generatedBy', 'name email')
     .lean();
 

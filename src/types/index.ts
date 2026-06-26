@@ -7,6 +7,7 @@ export type ClientStatus =
   | 'WAITING_RESPONSE'
   | 'ACCEPTED'
   | 'ACTIVE'
+  | 'INACTIVE'
   | 'REJECTED'
   | 'PAUSED'
   | 'CLOSED';
@@ -15,7 +16,7 @@ export type DocLang = 'en' | 'sq' | 'mk';
 
 export type AgreementType = 'OFFER' | 'CONTRACT' | 'INVOICE' | 'OTHER';
 
-export type BoardStatus = 'ACTIVE' | 'ARCHIVED';
+export type BoardStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
 
 export type TaskStatus =
   | 'CONTENT_PREPARATION'

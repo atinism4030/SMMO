@@ -101,6 +101,7 @@ export function getClientStatusColor(status: ClientStatus): string {
     WAITING_RESPONSE: 'bg-zinc-800 text-zinc-300 border-zinc-700',
     ACCEPTED:         'bg-zinc-700 text-white border-zinc-600',
     ACTIVE:           'bg-white text-black border-transparent',
+    INACTIVE:         'bg-zinc-900 text-zinc-600 border-zinc-800',
     REJECTED:         'bg-zinc-900 text-zinc-700 border-zinc-800',
     PAUSED:           'bg-zinc-800 text-zinc-400 border-zinc-700',
     CLOSED:           'bg-zinc-900 text-zinc-800 border-zinc-800',
