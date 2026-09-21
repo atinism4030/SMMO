@@ -9,9 +9,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await connectDB();
     const { id } = await params;
-    const client = await Client.findById(id);
+    // A CLIENT portal user may only ever fetch their own connected client record.
+    if (session.role === 'CLIENT' && session.clientId !== id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await connectDB();
+    let clientQuery = Client.findById(id);
+    if (session.role === 'WORKER') clientQuery = clientQuery.select('-billing');
+    const client = await clientQuery;
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
 
     return NextResponse.json({ client });

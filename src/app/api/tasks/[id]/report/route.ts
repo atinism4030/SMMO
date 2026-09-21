@@ -9,8 +9,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session || session.role !== 'CEO') {
-    return NextResponse.json({ error: 'Only CEOs can save report metrics' }, { status: 403 });
+  // Workers can enter report metrics for posted content (drafting reports),
+  // per the same "can draft, can't finalize/send" split as monthly reports —
+  // finalizing/sending the monthly report itself remains CEO-only.
+  if (!session || (session.role !== 'CEO' && session.role !== 'WORKER')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   await connectDB();

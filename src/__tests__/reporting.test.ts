@@ -95,11 +95,12 @@ describe('getEffectiveReportStatus', () => {
 });
 
 // Test 7: CEO vs WORKER authorization (logic level — API enforces this, tested here as pure logic)
-describe('CEO-only report authorization', () => {
-  it('only CEO role string passes authorization check', () => {
-    function canSaveReport(role: string) { return role === 'CEO'; }
+describe('task report metrics authorization', () => {
+  it('CEO and WORKER can save report metrics; CLIENT and unauthenticated cannot', () => {
+    function canSaveReport(role: string) { return role === 'CEO' || role === 'WORKER'; }
     assert.equal(canSaveReport('CEO'), true);
-    assert.equal(canSaveReport('WORKER'), false);
+    assert.equal(canSaveReport('WORKER'), true);
+    assert.equal(canSaveReport('CLIENT'), false);
     assert.equal(canSaveReport(''), false);
   });
 });

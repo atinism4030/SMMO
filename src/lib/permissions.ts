@@ -8,6 +8,17 @@ export function isWorker(user: JWTPayload | null): boolean {
   return user?.role === 'WORKER';
 }
 
+export function isClient(user: JWTPayload | null): boolean {
+  return user?.role === 'CLIENT';
+}
+
+/** Throws unless `user` is a CLIENT connected to exactly this client record. */
+export function requireOwnClient(user: JWTPayload | null, clientId: string): void {
+  if (!isClient(user) || user?.clientId !== clientId) {
+    throw new Error('Forbidden: not authorized for this client');
+  }
+}
+
 export function requireCEO(user: JWTPayload | null): void {
   if (!isCEO(user)) {
     throw new Error('Unauthorized: CEO access required');

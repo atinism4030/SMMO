@@ -6,6 +6,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
 import { BarChart3, Building2, ChevronRight, CheckCircle2, AlertTriangle, FileText, Layers } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/components/providers/LanguageProvider';
 
 interface ClientSummary {
   _id: string;
@@ -23,6 +24,7 @@ export default function ReportsContent() {
   const [summary, setSummary] = useState<ClientSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetch('/api/reports/summary')
@@ -35,14 +37,14 @@ export default function ReportsContent() {
   return (
     <>
       <Topbar
-        title="Reports"
-        subtitle="Click a client to view monthly performance boards and generate PDF reports"
+        title={t('reports.title')}
+        subtitle={t('reports.subtitle')}
       />
       <div className="flex-1 overflow-y-auto p-6">
         {summary.length === 0 ? (
           <EmptyState
-            title="No clients yet"
-            description="Add clients and create boards to start generating performance reports"
+            title={t('reports.noClients')}
+            description={t('reports.noClientsDesc')}
             icon={BarChart3}
           />
         ) : (
@@ -62,6 +64,7 @@ export default function ReportsContent() {
 }
 
 function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
@@ -84,17 +87,17 @@ function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () =>
       )}
 
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <MiniStat icon={Layers}        label="Boards"    value={client.totalBoards} />
-        <MiniStat icon={FileText}      label="Published" value={client.totalPosted} />
-        <MiniStat icon={CheckCircle2}  label="Insights"  value={client.completedInsights} color="text-zinc-400" />
-        <MiniStat icon={AlertTriangle} label="Missing"   value={client.missingInsights}
+        <MiniStat icon={Layers}        label={t('reports.boards')}    value={client.totalBoards} />
+        <MiniStat icon={FileText}      label={t('reports.published')} value={client.totalPosted} />
+        <MiniStat icon={CheckCircle2}  label={t('reports.insights')}  value={client.completedInsights} color="text-zinc-400" />
+        <MiniStat icon={AlertTriangle} label={t('reports.missing')}   value={client.missingInsights}
           color="text-zinc-400" />
       </div>
 
       {client.totalPosted > 0 ? (
         <>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('reports.insightCompletion')}</span>
             <span className="text-xs font-bold"
               style={{ color: 'var(--text-primary)' }}>
               {client.progress}%
@@ -108,7 +111,7 @@ function ClientCard({ client, onClick }: { client: ClientSummary; onClick: () =>
           </div>
         </>
       ) : (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No published content yet</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('reports.noPublishedContent')}</p>
       )}
     </button>
   );

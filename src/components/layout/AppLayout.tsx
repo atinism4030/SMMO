@@ -5,16 +5,18 @@ import type { UserRole } from '@/types';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  requiredRole?: UserRole | UserRole[];
 }
 
 export default async function AppLayout({ children, requiredRole }: AppLayoutProps) {
   const session = await getSession();
 
   if (!session) redirect('/login');
-  if (requiredRole && session.role !== requiredRole) {
+  const allowedRoles = requiredRole ? (Array.isArray(requiredRole) ? requiredRole : [requiredRole]) : null;
+  if (allowedRoles && !allowedRoles.includes(session.role)) {
     if (session.role === 'CEO') redirect('/dashboard');
-    else redirect('/worker/dashboard');
+    else if (session.role === 'WORKER') redirect('/worker/dashboard');
+    else redirect('/client/dashboard');
   }
 
   return (

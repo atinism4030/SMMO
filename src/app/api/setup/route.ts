@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   const existing = await User.countDocuments({ role: 'CEO' });
   if (existing > 0) {
     return NextResponse.json(
-      { error: 'Setup already completed. An admin account already exists.' },
+      { error: 'Setup already completed. A CEO / Co-Founder account already exists.' },
       { status: 403 }
     );
   }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(
-    { message: 'Admin account created successfully. You can now log in.' },
+    { message: 'Co-Founder account created successfully. You can now log in.' },
     { status: 201 }
   );
 }

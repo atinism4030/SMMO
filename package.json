@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/__tests__/reporting.test.ts",
-    "reset-db": "tsx src/scripts/reset-database.ts"
+    "test": "node --import tsx --test src/__tests__/reporting.test.ts src/__tests__/billing.test.ts src/__tests__/finance.test.ts src/__tests__/booking.test.ts src/__tests__/boardImport.test.ts src/__tests__/monthlyReport.test.ts",
+    "reset-db": "tsx src/scripts/reset-database.ts",
+    "cleanup:full": "tsx src/scripts/full-cleanup.ts"
   },
   "dependencies": {
     "@fontsource/noto-sans": "^5.2.10",
@@ -22,6 +23,7 @@
     "lucide-react": "^1.17.0",
     "mongoose": "^9.7.0",
     "next": "16.2.9",
+    "nodemailer": "^10.0.10",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-hot-toast": "^2.6.0",

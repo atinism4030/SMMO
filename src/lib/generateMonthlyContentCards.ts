@@ -19,7 +19,7 @@ export interface GenerateContentCardsOptions {
   createdBy: string;
 }
 
-const POST_CHECKLIST = [
+export const POST_CHECKLIST = [
   'Content idea prepared',
   'Photos/videos selected',
   'Design created',
@@ -32,7 +32,7 @@ const POST_CHECKLIST = [
   'Posted',
 ];
 
-const REEL_CHECKLIST = [
+export const REEL_CHECKLIST = [
   'Video selected',
   'Clips organized',
   'Reel edited',
@@ -47,7 +47,7 @@ const REEL_CHECKLIST = [
   'Posted',
 ];
 
-const STORY_CHECKLIST = [
+export const STORY_CHECKLIST = [
   'Story idea prepared',
   'Photo/video selected',
   'Story design/edit created',
@@ -58,7 +58,7 @@ const STORY_CHECKLIST = [
   'Posted',
 ];
 
-function toChecklist(items: string[]) {
+export function toChecklist(items: string[]) {
   return items.map(text => ({ text, done: false }));
 }
 

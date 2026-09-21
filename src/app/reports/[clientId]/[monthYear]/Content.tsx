@@ -1,245 +1,335 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import Button from '@/components/ui/Button';
+import { Input, Textarea, Select } from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import EmptyState from '@/components/ui/EmptyState';
-import { ArrowLeft, Layers, CheckCircle2, AlertTriangle, Eye, FileDown, ExternalLink } from 'lucide-react';
+import { useTranslation } from '@/components/providers/LanguageProvider';
+import {
+  ArrowLeft, FileDown, Lock, Unlock, ExternalLink, Layers,
+  CheckCircle2, XCircle, Camera,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import type { IClient, IBoard, ITask } from '@/types';
-import type { PDFTask } from '@/lib/generateBoardPDF';
+import toast from 'react-hot-toast';
+import type { IClient, IMonthlyReport, IMonthlyReportMetrics, IUser } from '@/types';
 
 const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-interface BoardSummary extends IBoard {
-  totalPosted: number;
-  completedInsights: number;
-  missingInsights: number;
-  totalViews: number;
-  tasks: ITask[];
-}
+const METRIC_FIELDS: { key: keyof IMonthlyReportMetrics; labelKey: string }[] = [
+  { key: 'followersStart', labelKey: 'reports.followersStart' },
+  { key: 'followersEnd', labelKey: 'reports.followersEnd' },
+  { key: 'totalReach', labelKey: 'reports.totalReach' },
+  { key: 'totalViews', labelKey: 'reports.totalViews' },
+  { key: 'profileVisits', labelKey: 'reports.profileVisits' },
+  { key: 'engagementRatePct', labelKey: 'reports.engagementRate' },
+  { key: 'facebookReach', labelKey: 'reports.facebookReach' },
+  { key: 'tiktokViews', labelKey: 'reports.tiktokViews' },
+];
 
-export default function MonthBoardsContent({ params }: { params: Promise<{ clientId: string; monthYear: string }> }) {
+type NarrativeField = 'summary' | 'highlights' | 'bestPerformingContent' | 'observations' | 'recommendations' | 'nextMonthPlan';
+
+const NARRATIVE_FIELDS: { key: NarrativeField; labelKey: string; placeholderKey: string }[] = [
+  { key: 'summary', labelKey: 'reports.monthlySummary', placeholderKey: 'reports.monthlySummaryPlaceholder' },
+  { key: 'highlights', labelKey: 'reports.highlights', placeholderKey: 'reports.highlightsPlaceholder' },
+  { key: 'bestPerformingContent', labelKey: 'reports.bestPerforming', placeholderKey: 'reports.bestPerformingPlaceholder' },
+  { key: 'observations', labelKey: 'reports.observations', placeholderKey: 'reports.observationsPlaceholder' },
+  { key: 'recommendations', labelKey: 'reports.recommendations', placeholderKey: 'reports.recommendationsPlaceholder' },
+  { key: 'nextMonthPlan', labelKey: 'reports.nextMonthPlan', placeholderKey: 'reports.nextMonthPlanPlaceholder' },
+];
+
+export default function MonthlyReportContent({ params }: { params: Promise<{ clientId: string; monthYear: string }> }) {
   const { clientId, monthYear } = use(params);
   const [year, month] = monthYear.split('-').map(Number);
   const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+  const { t } = useTranslation();
 
   const [client, setClient] = useState<IClient | null>(null);
-  const [boards, setBoards] = useState<BoardSummary[]>([]);
+  const [me, setMe] = useState<IUser | null>(null);
+  const [report, setReport] = useState<IMonthlyReport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
-  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const [metrics, setMetrics] = useState<IMonthlyReportMetrics>({});
+  const [narrative, setNarrative] = useState<Record<NarrativeField, string>>({
+    summary: '', highlights: '', bestPerformingContent: '', observations: '', recommendations: '', nextMonthPlan: '',
+  });
+  const [language, setLanguage] = useState<'en' | 'sq'>('en');
+
+  const applyReport = useCallback((r: IMonthlyReport) => {
+    setReport(r);
+    setMetrics(r.metrics ?? {});
+    setNarrative({
+      summary: r.summary ?? '',
+      highlights: r.highlights ?? '',
+      bestPerformingContent: r.bestPerformingContent ?? '',
+      observations: r.observations ?? '',
+      recommendations: r.recommendations ?? '',
+      nextMonthPlan: r.nextMonthPlan ?? '',
+    });
+    setLanguage(r.language ?? 'en');
+  }, []);
 
   useEffect(() => {
     async function load() {
-      const [clientRes, boardsRes, tasksRes] = await Promise.all([
+      const [clientRes, meRes, reportRes] = await Promise.all([
         fetch(`/api/clients/${clientId}`),
-        fetch(`/api/boards?clientId=${clientId}`),
-        fetch(`/api/tasks?clientId=${clientId}`),
+        fetch('/api/auth/me'),
+        fetch(`/api/reports/monthly?clientId=${clientId}&month=${month}&year=${year}`),
       ]);
-      const [cd, bd, td] = await Promise.all([clientRes.json(), boardsRes.json(), tasksRes.json()]);
+      const [cd, md, rd] = await Promise.all([clientRes.json(), meRes.json(), reportRes.json()]);
       setClient(cd.client ?? null);
-
-      const allBoards: IBoard[] = bd.boards ?? [];
-      const allTasks: ITask[] = td.tasks ?? [];
-
-      const monthBoards = allBoards.filter(b => b.month === month && b.year === year);
-      const boardIds = new Set(monthBoards.map(b => String(b._id)));
-
-      const tasksByBoard: Record<string, ITask[]> = {};
-      for (const t of allTasks) {
-        const bid = typeof t.boardId === 'string' ? t.boardId : (t.boardId as IBoard)?._id;
-        const bidStr = String(bid);
-        if (!boardIds.has(bidStr)) continue;
-        if (!tasksByBoard[bidStr]) tasksByBoard[bidStr] = [];
-        tasksByBoard[bidStr].push(t);
+      setMe(md.user ?? null);
+      if (reportRes.ok && rd.report) {
+        applyReport(rd.report);
+      } else {
+        toast.error(rd.error ?? 'Failed to load report');
       }
-
-      const summaries: BoardSummary[] = monthBoards.map(b => {
-        const bTasks = tasksByBoard[String(b._id)] ?? [];
-        const posted = bTasks.filter(t => t.status === 'POSTED');
-        const completed = posted.filter(t => t.reporting?.reportStatus === 'COMPLETED');
-        const views = completed.reduce((s, t) => s + (t.reporting?.metrics?.views ?? 0), 0);
-        return {
-          ...b,
-          totalPosted: posted.length,
-          completedInsights: completed.length,
-          missingInsights: posted.length - completed.length,
-          totalViews: views,
-          tasks: bTasks,
-        };
-      });
-
-      setBoards(summaries);
       setLoading(false);
     }
     load();
-  }, [clientId, month, year]);
+  }, [clientId, month, year, applyReport]);
 
-  async function handleGeneratePDF(board: BoardSummary) {
-    if (!client) return;
-    setPdfLoading(String(board._id));
+  const canEdit = report ? (me?.role === 'CEO' || report.status === 'DRAFT') : false;
+
+  const save = useCallback(async () => {
+    if (!report) return;
+    setSaving(true);
     try {
-      const { generateBoardPDF } = await import('@/lib/generateBoardPDF');
-      const pdfTasks: PDFTask[] = board.tasks.map(t => ({
-        _id: String(t._id),
-        title: t.title,
-        contentType: t.contentType,
-        platforms: t.platforms as string[] | undefined,
-        postedDate: t.postedDate ?? null,
-        status: t.status,
-        reporting: t.reporting
-          ? {
-              reportStatus: t.reporting.reportStatus,
-              reportDueAt: t.reporting.reportDueAt ?? null,
-              metrics: t.reporting.metrics,
-            }
-          : undefined,
-      }));
-      await generateBoardPDF(
-        { name: client.name },
-        { title: board.title, month: board.month, year: board.year },
-        pdfTasks
-      );
+      const res = await fetch(`/api/reports/monthly/${report._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language, metrics, ...narrative }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        applyReport(data.report);
+        toast.success(t('reports.saved'));
+      } else {
+        toast.error(data.error ?? 'Failed to save');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [report, language, metrics, narrative, t, applyReport]);
+
+  async function handleFinalize() {
+    if (!report || !confirm(t('reports.confirmFinalize'))) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/reports/monthly/${report._id}/finalize`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) { applyReport(data.report); toast.success(t('reports.finalizeReport')); }
+      else toast.error(data.error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReopen() {
+    if (!report || !confirm(t('reports.confirmReopen'))) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/reports/monthly/${report._id}/unfinalize`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) { applyReport(data.report); toast.success(t('reports.reopenForEdits')); }
+      else toast.error(data.error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePDF() {
+    if (!report || !client) return;
+    setPdfLoading(true);
+    try {
+      const { generateMonthlyReportPDF } = await import('@/lib/monthlyReportPDF');
+      await generateMonthlyReportPDF({
+        clientName: client.name,
+        month, year,
+        language,
+        stats: report.stats,
+        metrics,
+        summary: narrative.summary || undefined,
+        highlights: narrative.highlights || undefined,
+        bestPerformingContent: narrative.bestPerformingContent || undefined,
+        observations: narrative.observations || undefined,
+        recommendations: narrative.recommendations || undefined,
+        nextMonthPlan: narrative.nextMonthPlan || undefined,
+      });
     } catch (err) {
       console.error('PDF generation failed:', err);
       const message = err instanceof Error ? err.message : 'Unknown error';
       alert(`PDF report could not be generated.\n\n${message}`);
     } finally {
-      setPdfLoading(null);
+      setPdfLoading(false);
     }
   }
 
   if (loading) return <div className="flex-1 flex items-center justify-center"><LoadingSpinner size={32} /></div>;
 
+  const stats = report?.stats;
+  const isFinalized = report?.status === 'FINALIZED';
+
   return (
     <>
       <Topbar
         title={monthLabel}
-        subtitle={`${client?.name ?? ''} — Select a board to view performance or generate PDF`}
+        subtitle={client?.name ?? ''}
         actions={
-          <Link href={`/reports/${clientId}`}>
-            <Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button>
-          </Link>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href={`/reports/${clientId}`}>
+              <Button variant="secondary" size="sm"><ArrowLeft size={13} />{t('common.back')}</Button>
+            </Link>
+            <Button size="sm" onClick={handlePDF} disabled={pdfLoading || !report}>
+              {pdfLoading ? <LoadingSpinner size={12} /> : <FileDown size={12} />}
+              {pdfLoading ? t('reports.generating') : t('reports.downloadPdf')}
+            </Button>
+          </div>
         }
       />
-      <div className="flex-1 overflow-y-auto p-6">
-        {boards.length === 0 ? (
-          <EmptyState
-            title="No boards this month"
-            description="No boards were created for this month"
-            icon={Layers}
-          />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {boards.map(board => (
-              <BoardCard
-                key={String(board._id)}
-                board={board}
-                pdfLoading={pdfLoading === String(board._id)}
-                onOpen={() => router.push(`/reports/${clientId}/${monthYear}/${board._id}`)}
-                onPDF={() => handleGeneratePDF(board)}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
+        <div className="flex items-center justify-between rounded-2xl border p-4"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2.5">
+            {isFinalized
+              ? <Lock size={15} className="text-zinc-400" />
+              : <Unlock size={15} className="text-zinc-400" />}
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {isFinalized ? t('reports.finalized') : t('reports.draft')}
+            </span>
+            {!isFinalized && me?.role === 'WORKER' && (
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>— {t('reports.workerDraftNotice')}</span>
+            )}
+          </div>
+          {me?.role === 'CEO' && (
+            isFinalized ? (
+              <Button variant="secondary" size="sm" onClick={handleReopen} disabled={busy}>{t('reports.reopenForEdits')}</Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={handleFinalize} disabled={busy}>{t('reports.finalizeReport')}</Button>
+            )
+          )}
+        </div>
+
+        {stats && (
+          <Section title={t('reports.contentDelivered')} icon={Layers}>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{t('reports.autoGatheredNotice')}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              <StatBox label={t('reports.totalPlanned')} value={stats.totalPlanned} />
+              <StatBox label={t('reports.totalPosted')} value={stats.totalPosted} icon={CheckCircle2} />
+              <StatBox label={t('reports.notCompleted')} value={stats.totalNotCompleted} icon={XCircle} />
+              <StatBox label={t('reports.completedShoots')} value={stats.completedShoots} icon={Camera} />
+            </div>
+            {Object.keys(stats.byType).length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {Object.entries(stats.byType).map(([type, count]) => (
+                  <span key={type} className="text-xs px-2.5 py-1 rounded-full border"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                    {type}: {count}
+                  </span>
+                ))}
+              </div>
+            )}
+            {stats.postedLinks.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>{t('reports.postedContent')}</p>
+                <div className="space-y-1.5">
+                  {stats.postedLinks.map((l) => (
+                    <a key={l.taskId} href={l.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs hover:underline"
+                      style={{ color: 'var(--text-secondary)' }}>
+                      <ExternalLink size={11} className="shrink-0" />
+                      <span className="truncate">{l.title}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Section>
+        )}
+
+        <Section title={t('reports.performanceMetrics')}>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{t('reports.performanceMetricsHint')}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {METRIC_FIELDS.map(({ key, labelKey }) => (
+              <Input
+                key={key}
+                label={t(labelKey as never)}
+                type="number"
+                disabled={!canEdit}
+                value={metrics[key] ?? ''}
+                onChange={(e) => setMetrics((m) => ({ ...m, [key]: e.target.value === '' ? undefined : Number(e.target.value) }))}
               />
             ))}
           </div>
+        </Section>
+
+        <Section title="">
+          <Select
+            label={t('reports.reportLanguage')}
+            disabled={!canEdit}
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as 'en' | 'sq')}
+            options={[{ value: 'en', label: 'English' }, { value: 'sq', label: 'Shqip' }]}
+            className="max-w-xs"
+          />
+        </Section>
+
+        {NARRATIVE_FIELDS.map(({ key, labelKey, placeholderKey }) => (
+          <Section key={key} title={t(labelKey as never)}>
+            <Textarea
+              rows={4}
+              disabled={!canEdit}
+              placeholder={t(placeholderKey as never)}
+              value={narrative[key]}
+              onChange={(e) => setNarrative((n) => ({ ...n, [key]: e.target.value }))}
+            />
+          </Section>
+        ))}
+
+        {canEdit && (
+          <div className="flex justify-end pb-6">
+            <Button onClick={save} disabled={saving}>
+              {saving ? <LoadingSpinner size={13} /> : null}
+              {saving ? t('reports.saving') : t('reports.saveDraft')}
+            </Button>
+          </div>
+        )}
+        {isFinalized && me?.role !== 'CEO' && (
+          <p className="text-xs text-center pb-6" style={{ color: 'var(--text-muted)' }}>{t('reports.finalizedNotice')}</p>
         )}
       </div>
     </>
   );
 }
 
-function BoardCard({
-  board, pdfLoading, onOpen, onPDF,
-}: {
-  board: BoardSummary;
-  pdfLoading: boolean;
-  onOpen: () => void;
-  onPDF: () => void;
-}) {
-  const progress = board.totalPosted > 0
-    ? Math.round((board.completedInsights / board.totalPosted) * 100)
-    : 0;
-
+function Section({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-    >
-      {/* Board title */}
-      <p className="text-base font-bold mb-1 truncate" style={{ color: 'var(--text-primary)' }}>
-        {board.title}
-      </p>
-      <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-        {MONTH_NAMES[board.month - 1]} {board.year}
-      </p>
+    <div className="rounded-2xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+      {title && (
+        <div className="flex items-center gap-2 mb-4">
+          {Icon && <Icon size={15} className="text-zinc-400" />}
+          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{board.totalPosted}</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Published</p>
-        </div>
-        <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{board.completedInsights}</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Insights</p>
-        </div>
-        <div className="rounded-lg p-2 text-center" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-            {board.missingInsights}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Missing</p>
-        </div>
+function StatBox({ label, value, icon: Icon }: { label: string; value: number; icon?: React.ElementType }) {
+  return (
+    <div className="rounded-lg p-3" style={{ background: 'var(--bg-elevated)' }}>
+      <div className="flex items-center gap-1.5 mb-1">
+        {Icon && <Icon size={11} className="text-zinc-400" />}
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
       </div>
-
-      {board.totalViews > 0 && (
-        <div className="flex items-center gap-2 mb-3 px-2.5 py-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
-          <Eye size={11} className="text-zinc-400" />
-          <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {board.totalViews.toLocaleString('en-US')} total views
-          </span>
-        </div>
-      )}
-
-      {/* Missing warning */}
-      {board.missingInsights > 0 && (
-        <div className="flex items-center gap-1.5 mb-3 text-xs text-zinc-400">
-          <AlertTriangle size={11} />
-          <span>{board.missingInsights} content piece{board.missingInsights !== 1 ? 's' : ''} missing insights</span>
-        </div>
-      )}
-
-      {/* Progress bar */}
-      {board.totalPosted > 0 && (
-        <>
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
-            <span className="text-xs font-bold"
-              style={{ color: 'var(--text-primary)' }}>
-              {progress}%
-            </span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden mb-4" style={{ background: 'var(--bg-elevated)' }}>
-            <div className="h-1.5 rounded-full bg-zinc-400" style={{ width: `${progress}%` }} />
-          </div>
-        </>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex gap-2">
-        <Button variant="secondary" size="sm" className="flex-1" onClick={onOpen}>
-          <ExternalLink size={12} />
-          Open Report
-        </Button>
-        <Button size="sm" className="flex-1" onClick={onPDF} disabled={pdfLoading}>
-          {pdfLoading ? <LoadingSpinner size={12} /> : <FileDown size={12} />}
-          {pdfLoading ? 'Generating…' : 'PDF Report'}
-        </Button>
-      </div>
+      <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
     </div>
   );
 }

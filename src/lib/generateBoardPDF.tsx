@@ -842,7 +842,7 @@ function ReportDocument({ client, board, allTasks, lang }: ReportDocumentProps) 
     T.completionRateText(posted.length, withMetrics.length, completionRate) + '\n\n' +
     (missing.length > 0 ? T.someInsightsMissing : T.allInsightsComplete);
 
-  let sectionNum = 1;
+  const sectionNum = 1;
   const withTop3     = top3.length > 0;
   const withMissing  = missing.length > 0;
   const tableSecNum  = sectionNum + 1;      // 2

@@ -17,6 +17,14 @@ npm install
 ```env
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key_here
+
+# Optional — enables real booking-request/approval emails (any SMTP provider).
+# Without these, notifications are logged to the server console instead.
+SMTP_HOST=smtp.your-provider.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM="Horizonte Digital Group <no-reply@yourdomain.com>"
 ```
 
 > Generate a strong secret: `openssl rand -base64 32`
@@ -88,6 +96,8 @@ Without `--confirm` the script prints a warning and exits safely without touchin
 | contentitems | All content calendar items |
 | photoshootsessions | All photoshoot sessions |
 | reports | All report records |
+| billingperiods | All monthly billing periods |
+| clientpayments | All billing payments (verification/dispute history) |
 
 ### First use after reset
 

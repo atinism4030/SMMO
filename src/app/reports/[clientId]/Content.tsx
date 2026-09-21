@@ -9,6 +9,7 @@ import { ArrowLeft, Calendar, CheckCircle2, AlertTriangle, Eye, Layers } from 'l
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { IClient, IBoard, ITask } from '@/types';
+import { useTranslation } from '@/components/providers/LanguageProvider';
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -32,6 +33,7 @@ export default function ClientMonthsContent({ params }: { params: Promise<{ clie
   const [months, setMonths] = useState<MonthSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function load() {
@@ -91,19 +93,19 @@ export default function ClientMonthsContent({ params }: { params: Promise<{ clie
   return (
     <>
       <Topbar
-        title={client?.name ?? 'Client Reports'}
-        subtitle="Select a month to view boards and generate PDF reports"
+        title={client?.name ?? t('reports.title')}
+        subtitle={t('reports.selectMonth')}
         actions={
           <Link href="/reports">
-            <Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button>
+            <Button variant="secondary" size="sm"><ArrowLeft size={13} />{t('common.back')}</Button>
           </Link>
         }
       />
       <div className="flex-1 overflow-y-auto p-6">
         {months.length === 0 ? (
           <EmptyState
-            title="No boards yet"
-            description="Create boards for this client to start generating reports"
+            title={t('reports.noBoards')}
+            description={t('reports.noBoardsDesc')}
             icon={Layers}
           />
         ) : (
@@ -123,6 +125,7 @@ export default function ClientMonthsContent({ params }: { params: Promise<{ clie
 }
 
 function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: () => void }) {
+  const { t } = useTranslation();
   const progress = s.totalPosted > 0 ? Math.round((s.completedInsights / s.totalPosted) * 100) : 0;
 
   return (
@@ -148,24 +151,24 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Boards</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t('reports.boards')}</p>
           <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.boardCount}</p>
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
-          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Published</p>
+          <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t('reports.published')}</p>
           <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.totalPosted}</p>
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
           <div className="flex items-center gap-1 mb-1">
             <CheckCircle2 size={10} className="text-zinc-400" />
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Insights</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('reports.insights')}</p>
           </div>
           <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.completedInsights}</p>
         </div>
         <div className="rounded-lg p-2.5" style={{ background: 'var(--bg-elevated)' }}>
           <div className="flex items-center gap-1 mb-1">
             <AlertTriangle size={10} className="text-zinc-400" />
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Missing</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('reports.missing')}</p>
           </div>
           <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
             {s.missingInsights}
@@ -178,7 +181,7 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
         <div className="flex items-center gap-2 mb-3 px-2.5 py-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
           <Eye size={12} className="text-zinc-400" />
           <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {s.totalViews.toLocaleString('en-US')} total views
+            {s.totalViews.toLocaleString('en-US')} {t('reports.totalViews').toLowerCase()}
           </span>
         </div>
       )}
@@ -187,7 +190,7 @@ function MonthCard({ summary: s, onClick }: { summary: MonthSummary; onClick: ()
       {s.totalPosted > 0 && (
         <>
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Insight completion</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('reports.insightCompletion')}</span>
             <span className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
               {progress}%
             </span>

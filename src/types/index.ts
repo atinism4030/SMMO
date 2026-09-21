@@ -1,4 +1,4 @@
-export type UserRole = 'CEO' | 'WORKER';
+export type UserRole = 'CEO' | 'WORKER' | 'CLIENT';
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
 export type ClientStatus =
@@ -42,7 +42,6 @@ export type ContentStatus =
   | 'POSTED'
   | 'REPORTED';
 
-export type PaymentStatus = 'PAID' | 'UNPAID' | 'PARTIAL' | 'LATE';
 export type PaymentMethod = 'CASH' | 'BANK' | 'CARD' | 'OTHER';
 
 export interface IUser {
@@ -50,6 +49,7 @@ export interface IUser {
   name: string;
   email: string;
   role: UserRole;
+  clientId?: string | IClient;
   avatarUrl?: string;
   phone?: string;
   status: UserStatus;
@@ -79,6 +79,7 @@ export interface IClient {
   logoUrl?: string;
   driveFolderUrl?: string;
   isDemo?: boolean;
+  billing?: IClientBilling;
   createdAt: string;
   updatedAt: string;
 }
@@ -245,41 +246,47 @@ export interface IContentItem {
   updatedAt: string;
 }
 
-export interface IPayment {
+export type MonthlyReportStatus = 'DRAFT' | 'FINALIZED';
+
+export interface IMonthlyReportStats {
+  boardTitles: string[];
+  totalPlanned: number;
+  totalPosted: number;
+  totalNotCompleted: number;
+  byType: Record<string, number>;
+  completedShoots: number;
+  postedLinks: { taskId: string; title: string; contentType: string; url: string }[];
+}
+
+export interface IMonthlyReportMetrics {
+  followersStart?: number;
+  followersEnd?: number;
+  totalReach?: number;
+  totalViews?: number;
+  profileVisits?: number;
+  engagementRatePct?: number;
+  facebookReach?: number;
+  tiktokViews?: number;
+}
+
+export interface IMonthlyReport {
   _id: string;
   clientId: string | IClient;
   month: number;
   year: number;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  dueDate?: string;
-  paidDate?: string;
-  paymentMethod?: PaymentMethod;
-  invoiceUrl?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface IReport {
-  _id: string;
-  clientId: string | IClient;
-  contentItemId?: string | IContentItem;
-  taskId?: string | ITask;
-  reportDate: string;
-  daysAfterPosting?: number;
-  views?: number;
-  reach?: number;
-  likes?: number;
-  comments?: number;
-  shares?: number;
-  saves?: number;
-  clicks?: number;
-  engagementRate?: number;
-  notes?: string;
-  screenshotUrl?: string;
-  createdBy: string;
+  status: MonthlyReportStatus;
+  language: 'en' | 'sq';
+  stats: IMonthlyReportStats;
+  metrics: IMonthlyReportMetrics;
+  summary?: string;
+  highlights?: string;
+  bestPerformingContent?: string;
+  observations?: string;
+  recommendations?: string;
+  nextMonthPlan?: string;
+  createdBy: string | IUser;
+  finalizedAt?: string;
+  finalizedBy?: string | IUser;
   createdAt: string;
   updatedAt: string;
 }
@@ -299,52 +306,180 @@ export interface JWTPayload {
   email: string;
   role: UserRole;
   name: string;
+  clientId?: string;
 }
 
-// ─── Photoshoot Day Flow ───────────────────────────────────────────────────────
 
-export type PhotoshootStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+// ─── Billing & Client Portal ───────────────────────────────────────────────────
 
-export type ShotCategory =
-  | 'Food' | 'Product' | 'Interior' | 'Exterior' | 'Staff'
-  | 'Behind the Scenes' | 'Detail Shot' | 'Lifestyle'
-  | 'Video' | 'Reel' | 'Story' | 'Drone' | 'Other';
-
-export interface IShotItem {
-  _id: string;
-  title: string;
-  description?: string;
-  category: ShotCategory;
-  required: boolean;
-  completed: boolean;
-  completedBy?: string | IUser;
-  completedAt?: string;
+/**
+ * All monetary amounts in the billing module are stored in minor units
+ * (e.g. cents for EUR/USD) to avoid floating-point rounding errors.
+ * Use toMinorUnits()/fromMinorUnits()/formatMoney() from '@/lib/billing'.
+ */
+export interface IClientBilling {
+  monthlyFeeMinor: number;
+  currency: string;
+  billingStartDate?: string;
+  billingDay: number;
+  paymentTerms?: string;
+  billingEnabled: boolean;
   notes?: string;
-  sampleImageUrl?: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  order: number;
 }
 
-export interface IPhotoshootSession {
+export type BillingPeriodStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERPAID';
+
+export interface IBillingPeriod {
   _id: string;
   clientId: string | IClient;
-  title: string;
-  description?: string;
-  shootDate: string;
-  startTime: string;
-  endTime?: string;
-  location: string;
-  address?: string;
-  assignedWorkers: (string | IUser)[];
-  status: PhotoshootStatus;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  year: number;
+  month: number;
+  expectedAmountMinor: number;
+  currency: string;
+  verifiedPaidAmountMinor: number;
+  status: BillingPeriodStatus;
   notes?: string;
-  equipmentNeeded: string[];
-  clientContactName?: string;
-  clientContactPhone?: string;
-  shotList: IShotItem[];
-  createdBy: string | IUser;
-  isDemo?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export type PaymentVerificationStatus = 'PENDING_CONFIRMATION' | 'VERIFIED' | 'DISPUTED' | 'CANCELLED';
+
+export type DisputeReason = 'WRONG_AMOUNT' | 'WRONG_DATE' | 'NOT_MADE' | 'DUPLICATE' | 'OTHER';
+
+export interface IPaymentAllocation {
+  billingPeriodId: string | IBillingPeriod;
+  amountMinor: number;
+}
+
+export interface IPaymentEditHistoryEntry {
+  editedAt: string;
+  editedBy: string | IUser;
+  changes: Record<string, { from: unknown; to: unknown }>;
+}
+
+export interface IPaymentDisputeResolution {
+  resolvedAt: string;
+  resolvedBy: string | IUser;
+  action: 'EDITED' | 'CANCELLED' | 'RESENT' | 'DISMISSED';
+  note?: string;
+}
+
+export interface IClientPayment {
+  _id: string;
+  clientId: string | IClient;
+  amountMinor: number;
+  currency: string;
+  paymentDate: string;
+  paymentMethod: PaymentMethod;
+  reference?: string;
+  notes?: string;
+  allocations: IPaymentAllocation[];
+  creditAmountMinor: number;
+  verificationStatus: PaymentVerificationStatus;
+  destinationWalletId?: string | IWallet;
+  linkedFinanceTransactionId?: string;
+  createdBy: string | IUser;
+  verifiedAt?: string;
+  verifiedBy?: string | IUser;
+  disputedAt?: string;
+  disputeReason?: DisputeReason;
+  disputeMessage?: string;
+  disputedBy?: string | IUser;
+  disputeResolution?: IPaymentDisputeResolution;
+  cancelledAt?: string;
+  cancelledBy?: string | IUser;
+  editHistory?: IPaymentEditHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Company Finance ────────────────────────────────────────────────────────
+
+export type WalletType = 'PERSONAL' | 'COMPANY' | 'SAVINGS';
+
+export interface IWallet {
+  _id: string;
+  name: string;
+  type: WalletType;
+  ownerUserId?: string | IUser;
+  isActive: boolean;
+  order: number;
+  balanceMinor: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FinanceTransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
+export type FinanceTransactionStatus = 'ACTIVE' | 'VOIDED';
+
+export interface IFinanceEditHistoryEntry {
+  editedAt: string;
+  editedBy: string | IUser;
+  changes: Record<string, { from: unknown; to: unknown }>;
+}
+
+export interface IFinanceTransaction {
+  _id: string;
+  type: FinanceTransactionType;
+  status: FinanceTransactionStatus;
+  category?: string;
+  description?: string;
+  clientId?: string | IClient;
+  reference?: string;
+  notes?: string;
+  originalAmountMinor: number;
+  originalCurrency: string;
+  exchangeRate: number;
+  baseAmountMinor: number;
+  walletId?: string | IWallet;
+  fromWalletId?: string | IWallet;
+  toWalletId?: string | IWallet;
+  transactionDate: string;
+  createdBy: string | IUser;
+  sourcePaymentId?: string;
+  voidedAt?: string;
+  voidedBy?: string | IUser;
+  voidReason?: string;
+  editHistory?: IFinanceEditHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Bookings / Availability ────────────────────────────────────────────────
+
+export type ShootType = 'PHOTO_SHOOT' | 'VIDEO_SHOOT' | 'PHOTO_VIDEO' | 'CONTENT_SESSION' | 'OTHER';
+export type BookingStatus = 'PENDING' | 'SUGGESTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export interface IBooking {
+  _id: string;
+  clientId: string | IClient;
+  date: string;
+  startTime: string;
+  endTime: string;
+  shootType: ShootType;
+  notes?: string;
+  status: BookingStatus;
+  requestedBy: string | IUser;
+  reviewedBy?: string | IUser;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  suggestedDate?: string;
+  suggestedStartTime?: string;
+  suggestedEndTime?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A calendar entry as returned by /api/bookings/availability — full detail for CEO/own bookings, masked for other clients. */
+export interface IAvailabilityEntry {
+  _id?: string;
+  clientId?: string;
+  clientName?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  shootType?: ShootType;
+  notes?: string;
+  status: BookingStatus | 'BUSY';
 }

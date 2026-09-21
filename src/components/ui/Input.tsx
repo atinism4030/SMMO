@@ -6,7 +6,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helper?: string;
 }
 
-export function Input({ label, error, helper, className, id, ...props }: InputProps) {
+export function Input({ label, error, helper, className, id, onWheel, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   return (
     <div className="flex flex-col gap-1.5">
@@ -18,6 +18,7 @@ export function Input({ label, error, helper, className, id, ...props }: InputPr
       <input
         id={inputId}
         {...props}
+        onWheel={props.type === 'number' ? (e) => { e.currentTarget.blur(); onWheel?.(e); } : onWheel}
         className={cn(
           'w-full px-3 py-2.5 rounded-lg text-sm transition-colors',
           'border focus:border-zinc-500 focus:ring-1 focus:ring-white/10',

@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
 
   await connectDB();
   const { searchParams } = request.nextUrl;
-  const clientId = searchParams.get('clientId');
   const boardId = searchParams.get('boardId');
   const status = searchParams.get('status');
   const platform = searchParams.get('platform');
@@ -18,7 +17,18 @@ export async function GET(request: NextRequest) {
   const year = searchParams.get('year');
 
   const query: Record<string, unknown> = {};
-  if (clientId) query.clientId = clientId;
+
+  // A CLIENT user can only ever see their own content calendar — the
+  // clientId query param is ignored/overridden for that role so it can never
+  // be used to view another client's content.
+  if (session.role === 'CLIENT') {
+    if (!session.clientId) return NextResponse.json({ items: [] });
+    query.clientId = session.clientId;
+  } else {
+    const clientId = searchParams.get('clientId');
+    if (clientId) query.clientId = clientId;
+  }
+
   if (boardId) query.boardId = boardId;
   if (status) query.status = status;
   if (platform) query.platforms = platform;
@@ -40,6 +50,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Clients view their content calendar — they never create or edit items on it.
+  if (session.role === 'CLIENT') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await connectDB();
   const body = await request.json();

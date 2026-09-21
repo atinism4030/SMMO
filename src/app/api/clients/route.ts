@@ -8,6 +8,10 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // The client list exposes every client's data — a CLIENT portal user must
+    // never be able to enumerate other clients, only fetch their own by id
+    // via GET /api/clients/[id].
+    if (session.role === 'CLIENT') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     await connectDB();
     const { searchParams } = request.nextUrl;
@@ -23,6 +27,9 @@ export async function GET(request: NextRequest) {
     if (isDemo === 'false') query.isDemo = { $ne: true };
 
     let q = Client.find(query).sort({ createdAt: -1 });
+    // Workers see clients to assign/claim tasks against, but never billing
+    // details (monthly fee, billing settings) — that's CEO-only financial data.
+    if (session.role === 'WORKER') q = q.select('-billing');
     if (limit) q = q.limit(Number(limit));
     const clients = await q;
     return NextResponse.json({ clients });

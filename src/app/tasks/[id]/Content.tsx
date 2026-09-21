@@ -403,7 +403,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
         title={task.title}
         subtitle={client?.name}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {canClaim && <Button variant="success" size="sm" onClick={handleClaim}><CheckCircle size={13} />Claim Card</Button>}
             {isCEO && (
               <>
@@ -755,7 +755,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                       Add views, reach, likes and other metrics after posting.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
                       {isStory ? 'Story' : task.contentType}
                     </span>
@@ -851,6 +851,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                           <input
                             type="number" min="0" placeholder="0"
                             value={(metricsForm as Record<string, unknown>)[key] as number ?? ''}
+                            onWheel={e => e.currentTarget.blur()}
                             onChange={e => setMetricsForm(p => ({
                               ...p,
                               [key]: e.target.value === '' ? undefined : Number(e.target.value),
@@ -945,7 +946,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
             <div className="rounded-xl border p-4" style={cardStyle}>
               <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Assignment</p>
               {assignedWorker && typeof assignedWorker === 'object' ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                     style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
                     {(assignedWorker as IUser).name?.charAt(0)}
@@ -956,7 +957,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
               ) : task.isOpenForClaim ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <AlertCircle size={14} style={{ color: 'var(--text-muted)' }} />
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Open for claim</span>
                 </div>
@@ -1020,7 +1021,7 @@ export default function TaskDetailContent({ params }: { params: Promise<{ id: st
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <input type="checkbox" id="editOpenClaim" checked={editForm.isOpenForClaim}
               onChange={e => setEditForm(p => ({ ...p, isOpenForClaim: e.target.checked }))} className="rounded" />
             <label htmlFor="editOpenClaim" className="text-sm" style={{ color: 'var(--text-secondary)' }}>Open for workers to claim</label>

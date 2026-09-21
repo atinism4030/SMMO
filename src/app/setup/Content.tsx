@@ -44,7 +44,7 @@ export default function SetupContent() {
         return;
       }
 
-      setSuccess('Admin account created successfully. Redirecting to login...');
+      setSuccess('Co-Founder account created successfully. Redirecting to login...');
       setTimeout(() => router.push('/login'), 2000);
     } catch {
       setError('Network error. Please try again.');
@@ -66,9 +66,9 @@ export default function SetupContent() {
         </div>
 
         <div className="rounded-2xl border p-8" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Create Admin Account</h2>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Create Co-Founder Account</h2>
           <p className="text-xs mb-6" style={{ color: 'var(--text-muted)' }}>
-            No admin account found. Set up your CEO/Admin account to get started.
+            No CEO / Co-Founder account found. Set up the first one to get started.
           </p>
 
           {success ? (
@@ -151,14 +151,14 @@ export default function SetupContent() {
 
               <button type="submit" disabled={loading}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {loading ? 'Creating account...' : 'Create Admin Account'}
+                {loading ? 'Creating account...' : 'Create Co-Founder Account'}
               </button>
             </form>
           )}
         </div>
 
         <p className="text-center text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-          This page is only available when no admin account exists.
+          This page is only available when no CEO / Co-Founder account exists.
         </p>
       </div>
     </div>

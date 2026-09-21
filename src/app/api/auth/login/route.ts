@@ -33,10 +33,11 @@ export async function POST(request: NextRequest) {
       email: user.email,
       role: user.role,
       name: user.name,
+      clientId: user.clientId?.toString(),
     });
 
     return NextResponse.json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, clientId: user.clientId },
     });
   } catch (err) {
     console.error('Login error:', err);

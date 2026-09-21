@@ -16,7 +16,7 @@ export default function Topbar({ title, subtitle, actions, alerts = 0 }: TopbarP
 
   return (
     <div
-      className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-4"
+      className="sticky top-0 z-10 flex items-center justify-between flex-wrap gap-x-4 gap-y-3 px-4 sm:px-6 py-4"
       style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -33,7 +33,7 @@ export default function Topbar({ title, subtitle, actions, alerts = 0 }: TopbarP
           {subtitle && <p className="text-sm mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-wrap">
         {actions}
         {alerts > 0 && (
           <div className="relative">

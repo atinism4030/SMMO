@@ -6,6 +6,7 @@ import ContentItem from '@/models/ContentItem';
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (session.role === 'CLIENT') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await connectDB();
   const { id } = await params;

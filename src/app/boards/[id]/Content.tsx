@@ -190,7 +190,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
         title={board.title}
         subtitle={client?.name}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs px-2 py-1 rounded-full border" style={{ borderColor: 'var(--border)', color: boardStatusColor[board.status] ?? 'var(--text-muted)' }}>
               {board.status}
             </span>
@@ -388,7 +388,7 @@ export default function BoardDetailContent({ params }: { params: Promise<{ id: s
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <input type="checkbox" id="openClaim" checked={cardForm.isOpenForClaim}
               onChange={e => setCardForm(p => ({ ...p, isOpenForClaim: e.target.checked }))} className="rounded" />
             <label htmlFor="openClaim" className="text-sm" style={{ color: 'var(--text-secondary)' }}>Open for workers to claim</label>

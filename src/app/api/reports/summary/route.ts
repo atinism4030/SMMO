@@ -7,7 +7,7 @@ import Board from '@/models/Board';
 
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role !== 'CEO') {
+  if (!session || (session.role !== 'CEO' && session.role !== 'WORKER')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -1,13 +1,32 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { TaskStatus, TaskPriority, PaymentStatus, ContentStatus, ClientStatus, ContentType } from '@/types';
+import type {
+  TaskStatus, TaskPriority, ContentStatus, ClientStatus, ContentType,
+  PaymentVerificationStatus, BillingPeriodStatus,
+} from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Currency is a free-text field on clients (not a locked dropdown), so bad or
+// legacy values ("euro" instead of "EUR") do exist in real data. Intl.NumberFormat
+// throws a RangeError on anything that isn't a valid ISO 4217 code, which would
+// otherwise crash any page that lists multiple clients. Normalize common aliases
+// and fall back to a plain, non-crashing format for anything else.
+const CURRENCY_ALIASES: Record<string, string> = {
+  EURO: 'EUR', EUROS: 'EUR', DOLLAR: 'USD', DOLLARS: 'USD',
+  POUND: 'GBP', POUNDS: 'GBP', STERLING: 'GBP', LEK: 'ALL', DENAR: 'MKD',
+};
+
 export function formatCurrency(amount: number, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  const normalized = (currency || 'USD').trim().toUpperCase();
+  const code = CURRENCY_ALIASES[normalized] ?? normalized;
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
 }
 
 export function formatDate(date: string | Date | undefined) {
@@ -70,16 +89,6 @@ export function getPriorityColor(priority: TaskPriority): string {
   return map[priority] ?? 'bg-zinc-900 text-zinc-500';
 }
 
-export function getPaymentStatusColor(status: PaymentStatus): string {
-  const map: Record<PaymentStatus, string> = {
-    PAID:    'bg-white text-black border-transparent',
-    UNPAID:  'bg-zinc-900 text-zinc-500 border-zinc-800',
-    PARTIAL: 'bg-zinc-800 text-zinc-300 border-zinc-700',
-    LATE:    'bg-zinc-900 text-red-400 border-red-900/60',
-  };
-  return map[status] ?? 'bg-zinc-900 text-zinc-500';
-}
-
 export function getContentStatusColor(status: ContentStatus): string {
   const map: Record<ContentStatus, string> = {
     IDEA:             'bg-zinc-900 text-zinc-600',
@@ -109,12 +118,65 @@ export function getClientStatusColor(status: ClientStatus): string {
   return map[status] ?? 'bg-zinc-900 text-zinc-500';
 }
 
+export function getPaymentVerificationStatusColor(status: PaymentVerificationStatus): string {
+  const map: Record<PaymentVerificationStatus, string> = {
+    VERIFIED:             'bg-white text-black border-transparent',
+    PENDING_CONFIRMATION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    DISPUTED:             'bg-red-500/10 text-red-400 border-red-500/20',
+    CANCELLED:            'bg-zinc-900 text-zinc-600 border-zinc-800',
+  };
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
+}
+
+export function getPaymentVerificationStatusLabel(status: PaymentVerificationStatus): string {
+  const map: Record<PaymentVerificationStatus, string> = {
+    VERIFIED:             'Verified',
+    PENDING_CONFIRMATION: 'Pending Confirmation',
+    DISPUTED:             'Disputed',
+    CANCELLED:            'Cancelled',
+  };
+  return map[status] ?? status;
+}
+
+export function getBillingPeriodStatusColor(status: BillingPeriodStatus): string {
+  const map: Record<BillingPeriodStatus, string> = {
+    PAID:            'bg-white text-black border-transparent',
+    PARTIALLY_PAID:  'bg-zinc-800 text-zinc-300 border-zinc-700',
+    UNPAID:          'bg-zinc-900 text-zinc-500 border-zinc-800',
+    OVERPAID:        'bg-zinc-700 text-white border-zinc-600',
+  };
+  return map[status] ?? 'bg-zinc-900 text-zinc-500';
+}
+
+export function getBillingPeriodStatusLabel(status: BillingPeriodStatus): string {
+  const map: Record<BillingPeriodStatus, string> = {
+    PAID: 'Paid', PARTIALLY_PAID: 'Partially Paid', UNPAID: 'Unpaid', OVERPAID: 'Overpaid',
+  };
+  return map[status] ?? status;
+}
+
 export function getPlatformColor(platform: string): string {
-  return 'bg-zinc-800 text-zinc-300';
+  const map: Record<string, string> = {
+    Instagram: 'bg-zinc-800 text-zinc-200',
+    Facebook:  'bg-zinc-900 text-zinc-400',
+    TikTok:    'bg-zinc-700 text-white',
+    YouTube:   'bg-zinc-900 text-zinc-300',
+    Website:   'bg-zinc-800 text-teal-300',
+  };
+  return map[platform] ?? 'bg-zinc-800 text-zinc-300';
 }
 
 export function getContentTypeColor(type: ContentType): string {
-  return 'bg-zinc-900 text-zinc-400';
+  const map: Record<ContentType, string> = {
+    POST:     'bg-zinc-800 text-zinc-200',
+    REEL:     'bg-zinc-700 text-white',
+    STORY:    'bg-zinc-900 text-zinc-300',
+    CAROUSEL: 'bg-zinc-800 text-zinc-300',
+    VIDEO:    'bg-zinc-900 text-zinc-400',
+    PHOTO:    'bg-zinc-800 text-teal-300',
+    OTHER:    'bg-zinc-900 text-zinc-500',
+  };
+  return map[type] ?? 'bg-zinc-900 text-zinc-400';
 }
 
 export function getInitials(name: string): string {

@@ -197,7 +197,7 @@ export default function WorkerTaskDetailContent({ params }: { params: Promise<{ 
         title={task.title}
         subtitle={client?.name}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {canClaim && <Button variant="success" size="sm" onClick={handleClaim}><CheckCircle size={13} />Claim Card</Button>}
             <Link href="/worker/my-tasks"><Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button></Link>
           </div>

@@ -39,13 +39,16 @@ const SMMO_COLLECTIONS = [
   'clients',
   'boards',
   'tasks',
-  'payments',
   'agreements',
   'generateddocuments',
   'activitylogs',
   'contentitems',
-  'photoshootsessions',
-  'reports',
+  'monthlyreports',
+  'billingperiods',
+  'clientpayments',
+  'wallets',
+  'financetransactions',
+  'bookings',
 ];
 
 // ---------------------------------------------------------------------------
@@ -132,7 +135,7 @@ async function main() {
     console.log('    1. npm run dev');
     console.log('    2. Open http://localhost:3000');
     console.log('    3. You will be redirected to /setup');
-    console.log('    4. Create your CEO/Admin account');
+    console.log('    4. Create your CEO / Co-Founder account');
     console.log('    5. Log in and start fresh');
   } else {
     console.log(`  Reset finished with errors on: ${errors.join(', ')}`);

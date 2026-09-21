@@ -3,17 +3,20 @@
 import { useState, useEffect, use, useCallback } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import Button from '@/components/ui/Button';
-import { ClientStatusBadge, TaskStatusBadge, PlatformBadge, PaymentStatusBadge, ContentStatusBadge } from '@/components/ui/Badge';
+import { ClientStatusBadge, TaskStatusBadge, PlatformBadge, ContentStatusBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
 import { formatCurrency, formatDate, formatMonthYear } from '@/lib/utils';
-import type { IClient, IBoard, ITask, IPayment, IAgreement, IContentItem, IGeneratedDocument, DocLang } from '@/types';
+import type { IClient, IBoard, ITask, IAgreement, IContentItem, IGeneratedDocument, DocLang } from '@/types';
 import { ArrowLeft, Plus, ExternalLink, FileText, Trash2, Globe, AtSign, FileDown, Percent } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { DOC_LANG_LABELS } from '@/lib/documentTranslations';
+import PaymentsTab from './PaymentsTab';
+import PortalAccessCard from './PortalAccessCard';
+import { useTranslation } from '@/components/providers/LanguageProvider';
 
 type Tab = 'overview' | 'boards' | 'tasks' | 'payments' | 'agreements' | 'content' | 'documents';
 
@@ -205,6 +208,7 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
       <input
         type="number" min="0" value={value || ''}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
+        onWheel={e => e.currentTarget.blur()}
         className="w-full px-3 py-2 rounded-lg text-sm border"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
       />
@@ -213,11 +217,11 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
 }
 
 export default function ClientDetailContent({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = useTranslation();
   const { id } = use(params);
   const [client, setClient] = useState<IClient | null>(null);
   const [boards, setBoards] = useState<IBoard[]>([]);
   const [tasks, setTasks] = useState<ITask[]>([]);
-  const [payments, setPayments] = useState<IPayment[]>([]);
   const [agreements, setAgreements] = useState<IAgreement[]>([]);
   const [content, setContent] = useState<IContentItem[]>([]);
   const [generatedDocs, setGeneratedDocs] = useState<IGeneratedDocument[]>([]);
@@ -271,24 +275,22 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [clientRes, boardRes, taskRes, paymentRes, agreementRes, contentRes, meRes, docsRes] = await Promise.all([
+      const [clientRes, boardRes, taskRes, agreementRes, contentRes, meRes, docsRes] = await Promise.all([
         fetch(`/api/clients/${id}`),
         fetch(`/api/boards?clientId=${id}`),
         fetch(`/api/tasks?clientId=${id}`),
-        fetch(`/api/payments?clientId=${id}`),
         fetch(`/api/agreements?clientId=${id}`),
         fetch(`/api/content?clientId=${id}`),
         fetch('/api/users/me'),
         fetch(`/api/generated-documents?clientId=${id}`),
       ]);
-      const [cd, bd, td, pd, ad, con, me, docs] = await Promise.all([
-        clientRes.json(), boardRes.json(), taskRes.json(), paymentRes.json(),
+      const [cd, bd, td, ad, con, me, docs] = await Promise.all([
+        clientRes.json(), boardRes.json(), taskRes.json(),
         agreementRes.json(), contentRes.json(), meRes.json(), docsRes.json(),
       ]);
       setClient(cd.client);
       setBoards(bd.boards ?? []);
       setTasks(td.tasks ?? []);
-      setPayments(pd.payments ?? []);
       setAgreements(ad.agreements ?? []);
       setContent(con.items ?? []);
       setUserRole(me.user?.role ?? null);
@@ -433,13 +435,13 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
   if (!client) return <div className="p-6 text-red-400">Client not found.</div>;
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'boards', label: 'Boards', count: boards.length },
-    { key: 'tasks', label: 'Tasks', count: tasks.length },
-    { key: 'payments', label: 'Payments', count: payments.length },
-    { key: 'agreements', label: 'Documents', count: agreements.length },
-    { key: 'content', label: 'Content', count: content.length },
-    { key: 'documents', label: 'Generated', count: generatedDocs.length },
+    { key: 'overview', label: t('clientDetail.tabOverview') },
+    { key: 'boards', label: t('clientDetail.tabBoards'), count: boards.length },
+    { key: 'tasks', label: t('clientDetail.tabTasks'), count: tasks.length },
+    { key: 'payments', label: t('clientDetail.tabPayments') },
+    { key: 'agreements', label: t('clientDetail.tabAgreements'), count: agreements.length },
+    { key: 'content', label: t('clientDetail.tabContent'), count: content.length },
+    { key: 'documents', label: t('clientDetail.tabGenerated'), count: generatedDocs.length },
   ];
 
   const offerDiscount = offerForm.realPackagePrice > 0
@@ -461,15 +463,15 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
             {userRole === 'CEO' && (
               <>
                 <Button variant="secondary" size="sm" onClick={() => { setOfferForm(makeOfferForm()); setShowOfferModal(true); }}>
-                  <FileText size={13} />Generate Offer
+                  <FileText size={13} />{t('clientDetail.generateOffer')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => { setAgreementPDFForm(makeAgreementForm()); setShowAgreementPDFModal(true); }}>
-                  <FileDown size={13} />Generate Agreement
+                  <FileDown size={13} />{t('clientDetail.generateAgreement')}
                 </Button>
               </>
             )}
             <ClientStatusBadge status={client.status} />
-            <Link href="/clients"><Button variant="secondary" size="sm"><ArrowLeft size={13} />Back</Button></Link>
+            <Link href="/clients"><Button variant="secondary" size="sm"><ArrowLeft size={13} />{t('clientDetail.back')}</Button></Link>
           </div>
         }
       />
@@ -490,16 +492,16 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
             <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Client Info</h3>
+                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.clientInfo')}</h3>
                 <div className="space-y-3">
                   {[
-                    ['Contact', client.contactPerson],
-                    ['Phone', client.phone],
-                    ['Email', client.email],
-                    ['Package', client.packageName],
-                    ['Monthly Price', client.monthlyPrice ? formatCurrency(client.monthlyPrice, client.currency) : null],
-                    ['Start Date', formatDate(client.startDate)],
-                    ['Address', client.address],
+                    [t('clientDetail.contact'), client.contactPerson],
+                    [t('clientDetail.phone'), client.phone],
+                    [t('clientDetail.email'), client.email],
+                    [t('clientDetail.package'), client.packageName],
+                    [t('clientDetail.monthlyPrice'), client.monthlyPrice ? formatCurrency(client.monthlyPrice, client.currency) : null],
+                    [t('clientDetail.startDate'), formatDate(client.startDate)],
+                    [t('clientDetail.address'), client.address],
                   ].filter(([, v]) => v).map(([k, v]) => (
                     <div key={k} className="flex justify-between">
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{k}</span>
@@ -510,18 +512,18 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
               </div>
 
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Links</h3>
+                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.links')}</h3>
                 <div className="space-y-2">
                   {client.instagramUrl && <a href={client.instagramUrl} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-pink-400 hover:text-pink-300"><AtSign size={14} />Instagram</a>}
                   {client.facebookUrl && <a href={client.facebookUrl} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white"><ExternalLink size={14} />Facebook</a>}
                   {client.tiktokUrl && <a href={client.tiktokUrl} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-slate-300 hover:text-white"><ExternalLink size={14} />TikTok</a>}
                   {client.websiteUrl && <a href={client.websiteUrl} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-teal-400 hover:text-teal-300"><Globe size={14} />Website</a>}
                   {client.driveFolderUrl && <a href={client.driveFolderUrl} target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white"><ExternalLink size={14} />Google Drive</a>}
-                  {!client.instagramUrl && !client.facebookUrl && !client.websiteUrl && !client.driveFolderUrl && <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No links added.</p>}
+                  {!client.instagramUrl && !client.facebookUrl && !client.websiteUrl && !client.driveFolderUrl && <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('clientDetail.noLinksAdded')}</p>}
                 </div>
                 {client.notes && (
                   <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Notes</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('clientDetail.notes')}</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{client.notes}</p>
                   </div>
                 )}
@@ -531,7 +533,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
             {/* Quick Status Change — CEO only */}
             {userRole === 'CEO' && (
               <div className="mt-4 rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Client Status</h3>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.clientStatus')}</h3>
                 <select
                   value={client.status}
                   onChange={e => handleStatusChange(e.target.value)}
@@ -539,31 +541,33 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
                   className="w-full px-3 py-2.5 rounded-lg text-sm border"
                   style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
                   {[
-                    { value: 'LEAD',             label: 'Lead' },
-                    { value: 'OFFER_SENT',        label: 'Offer Sent' },
-                    { value: 'WAITING_RESPONSE',  label: 'Waiting Response' },
-                    { value: 'ACCEPTED',          label: 'Accepted' },
-                    { value: 'ACTIVE',            label: 'Active' },
-                    { value: 'INACTIVE',          label: 'Inactive' },
-                    { value: 'PAUSED',            label: 'Paused' },
-                    { value: 'REJECTED',          label: 'Rejected' },
-                    { value: 'CLOSED',            label: 'Closed' },
+                    { value: 'LEAD',             label: t('badges.clientStatusLead') },
+                    { value: 'OFFER_SENT',        label: t('badges.clientStatusOfferSent') },
+                    { value: 'WAITING_RESPONSE',  label: t('badges.clientStatusWaitingResponse') },
+                    { value: 'ACCEPTED',          label: t('badges.clientStatusAccepted') },
+                    { value: 'ACTIVE',            label: t('badges.clientStatusActive') },
+                    { value: 'INACTIVE',          label: t('badges.clientStatusInactive') },
+                    { value: 'PAUSED',            label: t('badges.clientStatusPaused') },
+                    { value: 'REJECTED',          label: t('badges.clientStatusRejected') },
+                    { value: 'CLOSED',            label: t('badges.clientStatusClosed') },
                   ].map(o => (
                     <option key={o.value} value={o.value} style={{ background: 'var(--bg-card)' }}>{o.label}</option>
                   ))}
                 </select>
               </div>
             )}
+
+            {userRole === 'CEO' && <PortalAccessCard clientId={id} clientName={client.name} />}
             </>
           )}
 
           {tab === 'boards' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Monthly Boards</h3>
-                <Link href="/boards"><Button size="sm"><Plus size={13} />New Board</Button></Link>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.monthlyBoards')}</h3>
+                <Link href="/boards"><Button size="sm"><Plus size={13} />{t('clientDetail.newBoard')}</Button></Link>
               </div>
-              {boards.length === 0 ? <EmptyState title="No boards yet" description="Create a monthly board for this client" icon={FileText} /> : (
+              {boards.length === 0 ? <EmptyState title={t('clientDetail.noBoardsYet')} description={t('clientDetail.noBoardsYetDesc')} icon={FileText} /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {boards.map(b => (
                     <Link key={b._id} href={`/boards/${b._id}`} className="block rounded-xl border p-4 hover:border-zinc-600 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
@@ -579,7 +583,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
 
           {tab === 'tasks' && (
             <div className="space-y-2">
-              {tasks.length === 0 ? <EmptyState title="No tasks" icon={FileText} /> : tasks.map(task => (
+              {tasks.length === 0 ? <EmptyState title={t('clientDetail.noTasks')} icon={FileText} /> : tasks.map(task => (
                 <Link key={task._id} href={`/tasks/${task._id}`} className="flex items-center gap-4 p-3 rounded-lg border hover:border-zinc-600 transition-all" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <TaskStatusBadge status={task.status} />
                   <span className="flex-1 text-sm" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
@@ -589,26 +593,15 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
             </div>
           )}
 
-          {tab === 'payments' && (
-            <div className="space-y-2">
-              {payments.length === 0 ? <EmptyState title="No payments" icon={FileText} /> : payments.map(p => (
-                <div key={p._id} className="flex items-center gap-4 p-3 rounded-lg border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                  <PaymentStatusBadge status={p.status} />
-                  <span className="flex-1 text-sm" style={{ color: 'var(--text-primary)' }}>{formatMonthYear(p.month, p.year)}</span>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(p.amount, p.currency)}</span>
-                  {p.dueDate && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Due {formatDate(p.dueDate)}</span>}
-                </div>
-              ))}
-            </div>
-          )}
+          {tab === 'payments' && <PaymentsTab clientId={id} />}
 
           {tab === 'agreements' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Documents & Agreements</h3>
-                <Button size="sm" onClick={() => setShowAgreementForm(true)}><Plus size={13} />Add Document</Button>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.documentsAndAgreements')}</h3>
+                <Button size="sm" onClick={() => setShowAgreementForm(true)}><Plus size={13} />{t('clientDetail.addDocument')}</Button>
               </div>
-              {agreements.length === 0 ? <EmptyState title="No documents" description="Attach agreements or contracts" icon={FileText} /> : (
+              {agreements.length === 0 ? <EmptyState title={t('clientDetail.noDocuments')} description={t('clientDetail.noDocumentsDesc')} icon={FileText} /> : (
                 <div className="space-y-2">
                   {agreements.map(a => (
                     <div key={a._id} className="flex items-center gap-4 p-3 rounded-lg border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
@@ -628,7 +621,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
 
           {tab === 'content' && (
             <div className="space-y-2">
-              {content.length === 0 ? <EmptyState title="No content items" icon={FileText} /> : content.map(c => (
+              {content.length === 0 ? <EmptyState title={t('clientDetail.noContentItems')} icon={FileText} /> : content.map(c => (
                 <div key={c._id} className="flex items-center gap-4 p-3 rounded-lg border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
                   <ContentStatusBadge status={c.status} />
                   <span className="flex-1 text-sm" style={{ color: 'var(--text-primary)' }}>{c.title}</span>
@@ -644,16 +637,16 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
             <div>
               <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Generated Documents</h3>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>PDF offers and agreements generated for this client</p>
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('clientDetail.generatedDocuments')}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{t('clientDetail.generatedDocumentsDesc')}</p>
                 </div>
                 {userRole === 'CEO' && (
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" onClick={() => { setOfferForm(makeOfferForm()); setShowOfferModal(true); }}>
-                      <FileText size={13} />New Offer
+                      <FileText size={13} />{t('clientDetail.newOffer')}
                     </Button>
                     <Button size="sm" onClick={() => { setAgreementPDFForm(makeAgreementForm()); setShowAgreementPDFModal(true); }}>
-                      <FileDown size={13} />New Agreement
+                      <FileDown size={13} />{t('clientDetail.newAgreement')}
                     </Button>
                   </div>
                 )}
@@ -661,16 +654,16 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
 
               {generatedDocs.length === 0 ? (
                 <EmptyState
-                  title="No generated documents"
-                  description={userRole === 'CEO' ? 'Use the buttons above to generate an offer or agreement PDF' : 'No documents have been generated for this client yet'}
+                  title={t('clientDetail.noGeneratedDocuments')}
+                  description={userRole === 'CEO' ? t('clientDetail.noGeneratedDocumentsCeoDesc') : t('clientDetail.noGeneratedDocumentsDesc')}
                   icon={FileText}
                   action={userRole === 'CEO' ? (
                     <div className="flex gap-2">
                       <Button size="sm" variant="secondary" onClick={() => { setOfferForm(makeOfferForm()); setShowOfferModal(true); }}>
-                        <FileText size={13} />Generate Offer
+                        <FileText size={13} />{t('clientDetail.generateOffer')}
                       </Button>
                       <Button size="sm" onClick={() => { setAgreementPDFForm(makeAgreementForm()); setShowAgreementPDFModal(true); }}>
-                        <FileDown size={13} />Generate Agreement
+                        <FileDown size={13} />{t('clientDetail.generateAgreement')}
                       </Button>
                     </div>
                   ) : undefined}
@@ -741,7 +734,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
       {/* Generate Offer Modal */}
       <Modal open={showOfferModal} onClose={() => setShowOfferModal(false)} title={`Generate Offer — ${client.name}`} size="lg"
         footer={
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full flex-wrap gap-3">
             <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
               <input type="checkbox" className="accent-white" checked={offerForm.updateStatus}
                 onChange={e => setOfferForm(p => ({ ...p, updateStatus: e.target.checked }))} />
@@ -828,7 +821,7 @@ export default function ClientDetailContent({ params }: { params: Promise<{ id: 
       {/* Generate Agreement Modal */}
       <Modal open={showAgreementPDFModal} onClose={() => setShowAgreementPDFModal(false)} title={`Generate Agreement — ${client.name}`} size="lg"
         footer={
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full flex-wrap gap-3">
             <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
               <input type="checkbox" className="accent-white" checked={agreementPDFForm.updateStatus}
                 onChange={e => setAgreementPDFForm(p => ({ ...p, updateStatus: e.target.checked }))} />

@@ -8,14 +8,16 @@ import { formatDate, isOverdue } from '@/lib/utils';
 import type { ITask, IClient, IUser } from '@/types';
 import { CheckSquare, AlertCircle, Search, Clock, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslation } from '@/components/providers/LanguageProvider';
+import type { TranslationKey } from '@/lib/i18n';
 
-const STATUS_META = [
-  { value: 'CONTENT_PREPARATION', label: 'In Preparation', short: 'Prep' },
-  { value: 'QUALITY_ASSURANCE',   label: 'Quality Assurance', short: 'QA' },
-  { value: 'POST_VERIFIED',       label: 'Post Verified', short: 'Verified' },
-  { value: 'READY_TO_POST',       label: 'Ready to Post', short: 'Ready' },
-  { value: 'POSTED',              label: 'Posted', short: 'Posted' },
-  { value: 'NEEDS_FIX',           label: 'Needs Fix', short: 'Fix' },
+const STATUS_META: { value: string; labelKey: TranslationKey; shortKey: TranslationKey }[] = [
+  { value: 'CONTENT_PREPARATION', labelKey: 'tasks.statusPrep', shortKey: 'tasks.statusPrepShort' },
+  { value: 'QUALITY_ASSURANCE',   labelKey: 'tasks.statusQA', shortKey: 'tasks.statusQAShort' },
+  { value: 'POST_VERIFIED',       labelKey: 'tasks.statusVerified', shortKey: 'tasks.statusVerifiedShort' },
+  { value: 'READY_TO_POST',       labelKey: 'tasks.statusReady', shortKey: 'tasks.statusReadyShort' },
+  { value: 'POSTED',              labelKey: 'tasks.statusPosted', shortKey: 'tasks.statusPostedShort' },
+  { value: 'NEEDS_FIX',           labelKey: 'tasks.statusNeedsFix', shortKey: 'tasks.statusNeedsFixShort' },
 ];
 
 const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
@@ -28,6 +30,7 @@ const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
 };
 
 export default function TasksContent() {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -50,6 +53,7 @@ export default function TasksContent() {
     setLoading(false);
   }, [statusFilter, clientFilter]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate fetch-on-mount, not a cascading-render bug
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
   const filtered = tasks.filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()));
@@ -59,7 +63,7 @@ export default function TasksContent() {
 
   return (
     <>
-      <Topbar title="Tasks" subtitle={`${filtered.length} card${filtered.length !== 1 ? 's' : ''}`} />
+      <Topbar title={t('tasks.title')} subtitle={t('tasks.cardCount', { count: filtered.length, plural: filtered.length !== 1 ? 's' : '' })} />
       <div className="flex-1 overflow-y-auto">
 
         {/* Status overview — desktop */}
@@ -73,7 +77,7 @@ export default function TasksContent() {
                 borderColor: statusFilter === '' ? '#ffffff' : 'var(--border)',
               }}>
               <p className="text-2xl font-bold" style={{ color: statusFilter === '' ? '#000000' : 'var(--text-primary)' }}>{tasks.length}</p>
-              <p className="text-xs mt-1 font-medium" style={{ color: statusFilter === '' ? '#555555' : 'var(--text-muted)' }}>All</p>
+              <p className="text-xs mt-1 font-medium" style={{ color: statusFilter === '' ? '#555555' : 'var(--text-muted)' }}>{t('tasks.all')}</p>
             </button>
             {STATUS_META.map(s => (
               <button
@@ -88,7 +92,7 @@ export default function TasksContent() {
                   {counts[s.value] ?? 0}
                 </p>
                 <p className="text-xs mt-1 font-medium" style={{ color: statusFilter === s.value ? '#555555' : 'var(--text-muted)' }}>
-                  {s.short}
+                  {t(s.shortKey)}
                 </p>
               </button>
             ))}
@@ -98,7 +102,7 @@ export default function TasksContent() {
         {/* Status tabs — mobile */}
         <div className="sm:hidden px-4 pt-4">
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {[{ value: '', short: 'All', count: tasks.length }, ...STATUS_META.map(s => ({ ...s, count: counts[s.value] ?? 0 }))].map(s => (
+            {[{ value: '', shortKey: 'tasks.all' as TranslationKey, count: tasks.length }, ...STATUS_META.map(s => ({ ...s, count: counts[s.value] ?? 0 }))].map(s => (
               <button
                 key={s.value}
                 onClick={() => setStatusFilter(prev => prev === s.value ? '' : s.value)}
@@ -108,7 +112,7 @@ export default function TasksContent() {
                   borderColor: statusFilter === s.value ? '#ffffff' : 'var(--border)',
                   color: statusFilter === s.value ? '#000000' : 'var(--text-secondary)',
                 }}>
-                {s.short} ({s.count})
+                {t(s.shortKey)} ({s.count})
               </button>
             ))}
           </div>
@@ -121,7 +125,7 @@ export default function TasksContent() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t('tasks.searchPlaceholder')}
               className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
             />
@@ -131,7 +135,7 @@ export default function TasksContent() {
             onChange={e => setClientFilter(e.target.value)}
             className="px-3 py-2 rounded-lg text-sm border"
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-            <option value="" style={{ background: 'var(--bg-card)' }}>All Clients</option>
+            <option value="" style={{ background: 'var(--bg-card)' }}>{t('tasks.allClients')}</option>
             {clients.map(c => <option key={c._id} value={c._id} style={{ background: 'var(--bg-card)' }}>{c.name}</option>)}
           </select>
         </div>
@@ -141,7 +145,7 @@ export default function TasksContent() {
           {loading ? (
             <LoadingSpinner fullPage />
           ) : filtered.length === 0 ? (
-            <EmptyState title="No tasks found" icon={CheckSquare} description="Adjust your filters or create tasks from a board" />
+            <EmptyState title={t('tasks.noTasksFound')} icon={CheckSquare} description={t('tasks.noTasksFoundDesc')} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map(task => {
@@ -164,11 +168,11 @@ export default function TasksContent() {
                       {/* Status + overdue */}
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: badge.bg, color: badge.color }}>
-                          {task.status.replace(/_/g, ' ')}
+                          {t(STATUS_META.find(s => s.value === task.status)?.labelKey ?? 'tasks.statusPrep')}
                         </span>
                         {overdue && (
                           <span className="flex items-center gap-1 text-xs text-red-400 font-medium">
-                            <AlertCircle size={11} />Overdue
+                            <AlertCircle size={11} />{t('tasks.overdue')}
                           </span>
                         )}
                       </div>
@@ -197,7 +201,7 @@ export default function TasksContent() {
                       {checklist.length > 0 && (
                         <div className="mb-3">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Checklist</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('tasks.checklist')}</span>
                             <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{doneCount}/{checklist.length}</span>
                           </div>
                           <div className="h-1 rounded-full" style={{ background: 'var(--bg-elevated)' }}>
@@ -216,7 +220,7 @@ export default function TasksContent() {
                               color: task.reporting.reportStatus === 'COMPLETED' ? '#d4d4d8' : 'var(--text-muted)',
                             }}>
                             <FileText size={9} className="inline mr-1" />
-                            Report: {task.reporting.reportStatus === 'COMPLETED' ? 'Done' : 'Pending'}
+                            {t('tasks.reportLabel')}: {task.reporting.reportStatus === 'COMPLETED' ? t('tasks.reportDone') : t('tasks.reportPending')}
                           </span>
                         </div>
                       )}
@@ -232,7 +236,7 @@ export default function TasksContent() {
                             <span className="text-xs truncate max-w-[80px]" style={{ color: 'var(--text-muted)' }}>{(worker as IUser).name}</span>
                           </div>
                         ) : task.isOpenForClaim ? (
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Open for claim</span>
+                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('tasks.openForClaim')}</span>
                         ) : (
                           <span />
                         )}

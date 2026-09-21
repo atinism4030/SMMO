@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types';
+import { useTranslation } from '@/components/providers/LanguageProvider';
+import type { TranslationKey } from '@/lib/i18n';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import {
   LayoutDashboard,
   Users,
@@ -12,6 +15,7 @@ import {
   CheckSquare,
   Calendar,
   CreditCard,
+  Landmark,
   BarChart3,
   UserCircle,
   FileText,
@@ -19,37 +23,45 @@ import {
   ClipboardList,
   Star,
   LogOut,
-  Camera,
+  CalendarCheck,
   X,
 } from 'lucide-react';
 
 interface NavItem {
-  label: string;
+  labelKey: TranslationKey;
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
 const ceoNav: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Clients', href: '/clients', icon: Users },
-  { label: 'Boards', href: '/boards', icon: LayoutGrid },
-  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { label: 'Content Calendar', href: '/calendar', icon: Calendar },
-  { label: 'Payments', href: '/payments', icon: CreditCard },
-  { label: 'Reports', href: '/reports', icon: BarChart3 },
-  { label: 'Photoshooting Days', href: '/photoshoots', icon: Camera },
-  { label: 'Workers', href: '/workers', icon: UserCircle },
-  { label: 'Documents', href: '/documents', icon: FileText },
-  { label: 'Settings', href: '/settings', icon: Settings },
+  { labelKey: 'nav.dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { labelKey: 'nav.clients', href: '/clients', icon: Users },
+  { labelKey: 'nav.boards', href: '/boards', icon: LayoutGrid },
+  { labelKey: 'nav.tasks', href: '/tasks', icon: CheckSquare },
+  { labelKey: 'nav.bookings', href: '/bookings', icon: CalendarCheck },
+  { labelKey: 'nav.payments', href: '/payments', icon: CreditCard },
+  { labelKey: 'nav.finances', href: '/finance', icon: Landmark },
+  { labelKey: 'nav.reports', href: '/reports', icon: BarChart3 },
+  { labelKey: 'nav.workersAccounts', href: '/workers', icon: UserCircle },
+  { labelKey: 'nav.portalDocuments', href: '/documents', icon: FileText },
+  { labelKey: 'nav.settings', href: '/settings', icon: Settings },
 ];
 
 const workerNav: NavItem[] = [
-  { label: 'My Dashboard', href: '/worker/dashboard', icon: LayoutDashboard },
-  { label: 'Available Tasks', href: '/worker/available-tasks', icon: Star },
-  { label: 'My Tasks', href: '/worker/my-tasks', icon: ClipboardList },
-  { label: 'Calendar', href: '/worker/calendar', icon: Calendar },
-  { label: 'My Photoshoots', href: '/worker/photoshoots', icon: Camera },
-  { label: 'Settings', href: '/worker/settings', icon: Settings },
+  { labelKey: 'nav.myDashboard', href: '/worker/dashboard', icon: LayoutDashboard },
+  { labelKey: 'nav.availableTasks', href: '/worker/available-tasks', icon: Star },
+  { labelKey: 'nav.myTasks', href: '/worker/my-tasks', icon: ClipboardList },
+  { labelKey: 'nav.calendar', href: '/worker/calendar', icon: Calendar },
+  { labelKey: 'nav.reports', href: '/reports', icon: BarChart3 },
+  { labelKey: 'nav.settings', href: '/worker/settings', icon: Settings },
+];
+
+const clientNav: NavItem[] = [
+  { labelKey: 'nav.overview', href: '/client/dashboard', icon: LayoutDashboard },
+  { labelKey: 'nav.payments', href: '/client/payments', icon: CreditCard },
+  { labelKey: 'nav.contentCalendar', href: '/client/content', icon: Calendar },
+  { labelKey: 'nav.bookAShoot', href: '/client/booking', icon: CalendarCheck },
+  { labelKey: 'nav.account', href: '/client/account', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -60,7 +72,8 @@ interface SidebarProps {
 
 export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
   const pathname = usePathname();
-  const nav = role === 'CEO' ? ceoNav : workerNav;
+  const { t } = useTranslation();
+  const nav = role === 'CEO' ? ceoNav : role === 'WORKER' ? workerNav : clientNav;
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -70,10 +83,11 @@ export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
   }, []);
 
   // Close drawer on navigation
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberately syncing UI state to route changes, not a cascading-render bug
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/worker/dashboard') return pathname === href;
+    if (href === '/dashboard' || href === '/worker/dashboard' || href === '/client/dashboard') return pathname === href;
     return pathname.startsWith(href);
   };
 
@@ -81,6 +95,8 @@ export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
     await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = '/login';
   }
+
+  const roleLabel = role === 'CEO' ? t('nav.ceoCoFounder') : role === 'WORKER' ? t('nav.worker') : t('nav.clientRole');
 
   const inner = (
     <aside
@@ -108,10 +124,11 @@ export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
       </div>
 
       {/* Role badge */}
-      <div className="px-4 py-3 border-b" style={{ borderColor: '#1a1a1a' }}>
+      <div className="px-4 py-3 border-b flex items-center justify-between gap-2" style={{ borderColor: '#1a1a1a' }}>
         <span className="text-xs font-semibold px-2 py-1 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800">
-          {role === 'CEO' ? 'CEO / Admin' : 'Worker'}
+          {roleLabel}
         </span>
+        <LanguageSwitcher compact />
       </div>
 
       {/* Navigation */}
@@ -131,7 +148,7 @@ export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
               )}
             >
               <Icon size={15} />
-              {item.label}
+              {t(item.labelKey)}
               {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-black" />}
             </Link>
           );
@@ -154,7 +171,7 @@ export default function Sidebar({ role, userName, userEmail }: SidebarProps) {
           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-zinc-600 hover:text-red-400 hover:bg-red-500/5 transition-colors"
         >
           <LogOut size={14} />
-          Sign Out
+          {t('common.signOut')}
         </button>
       </div>
     </aside>

@@ -2,26 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import Button from '@/components/ui/Button';
 import { ConfirmModal } from '@/components/ui/Modal';
-import EmptyState from '@/components/ui/EmptyState';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate } from '@/lib/utils';
 import type { IAgreement, IGeneratedDocument, IClient } from '@/types';
 import { FileText, ExternalLink, Trash2, Search, FileDown, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useTranslation } from '@/components/providers/LanguageProvider';
 
 const TYPE_COLORS: Record<string, string> = {
   CONTRACT: 'bg-zinc-900 text-zinc-400 border-zinc-800',
   OFFER: 'bg-zinc-900 text-zinc-400 border-zinc-800',
   INVOICE: 'bg-zinc-800 text-zinc-300 border-zinc-700',
   OTHER: 'bg-zinc-900 text-zinc-500 border-zinc-800',
-};
-
-const DOC_TYPE_LABEL: Record<string, string> = {
-  offer: 'Offer',
-  agreement: 'Agreement',
 };
 
 const LANG_LABEL: Record<string, string> = {
@@ -31,6 +25,7 @@ const LANG_LABEL: Record<string, string> = {
 };
 
 export default function DocumentsContent() {
+  const { t } = useTranslation();
   const [agreements, setAgreements] = useState<IAgreement[]>([]);
   const [generatedDocs, setGeneratedDocs] = useState<IGeneratedDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +57,7 @@ export default function DocumentsContent() {
     setAgreements(prev => prev.filter(a => a._id !== deleteTarget._id));
     setDeleteTarget(null);
     setDeleting(false);
-    toast.success('Document deleted');
+    toast.success(t('documentsAdmin.documentDeleted'));
   }
 
   const searchLower = search.toLowerCase();
@@ -100,14 +95,14 @@ export default function DocumentsContent() {
 
   return (
     <>
-      <Topbar title="Documents" subtitle="Generated offers, agreements, and attached files" />
+      <Topbar title={t('documentsAdmin.title')} subtitle={t('documentsAdmin.subtitle')} />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
         {/* Search + filter bar */}
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search documents..."
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('documentsAdmin.searchPlaceholder')}
               className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
           </div>
@@ -116,9 +111,9 @@ export default function DocumentsContent() {
             onChange={e => setTypeFilter(e.target.value as typeof typeFilter)}
             className="px-3 py-2 rounded-lg text-sm border"
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <option value="all" style={{ background: 'var(--bg-card)' }}>All Types</option>
-            <option value="offer" style={{ background: 'var(--bg-card)' }}>Offers</option>
-            <option value="agreement" style={{ background: 'var(--bg-card)' }}>Agreements</option>
+            <option value="all" style={{ background: 'var(--bg-card)' }}>{t('documentsAdmin.allTypes')}</option>
+            <option value="offer" style={{ background: 'var(--bg-card)' }}>{t('documentsAdmin.offers')}</option>
+            <option value="agreement" style={{ background: 'var(--bg-card)' }}>{t('documentsAdmin.agreements')}</option>
           </select>
         </div>
 
@@ -133,8 +128,8 @@ export default function DocumentsContent() {
                   <FileDown size={14} style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Generated Documents</h2>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>PDF offers and agreements generated from client pages</p>
+                  <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('documentsAdmin.generatedDocuments')}</h2>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('documentsAdmin.generatedDocumentsDesc')}</p>
                 </div>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
                   {filteredGenerated.length}
@@ -144,9 +139,9 @@ export default function DocumentsContent() {
               {filteredGenerated.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-8 text-center" style={{ borderColor: 'var(--border)' }}>
                   <FileDown size={24} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No generated documents</p>
+                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('documentsAdmin.noGeneratedDocuments')}</p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Open a client&apos;s page and click <strong>Generate Offer</strong> or <strong>Generate Agreement</strong>
+                    {t('documentsAdmin.noGeneratedDocumentsHint')}
                   </p>
                 </div>
               ) : (
@@ -169,7 +164,7 @@ export default function DocumentsContent() {
                             {isLatest && (
                               <span className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
                                 style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                                Latest
+                                {t('documentsAdmin.latest')}
                               </span>
                             )}
                           </div>
@@ -189,7 +184,7 @@ export default function DocumentsContent() {
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <span className="text-xs px-2 py-0.5 rounded-full border"
                             style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                            {DOC_TYPE_LABEL[d.documentType] ?? d.documentType}
+                            {d.documentType === 'offer' ? t('documentsAdmin.offer') : d.documentType === 'agreement' ? t('documentsAdmin.agreement') : d.documentType}
                           </span>
                           <span className="text-xs px-2 py-0.5 rounded-full border"
                             style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
@@ -203,7 +198,7 @@ export default function DocumentsContent() {
                             href={`/clients/${client._id}?tab=documents`}
                             className="p-1.5 rounded-lg transition-colors"
                             style={{ color: 'var(--text-muted)' }}
-                            title="Open in client page">
+                            title={t('documentsAdmin.openInClientPage')}>
                             <ExternalLink size={14} />
                           </Link>
                         )}
@@ -224,8 +219,8 @@ export default function DocumentsContent() {
                     <FileText size={14} style={{ color: 'var(--text-muted)' }} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Attached Documents</h2>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Manually attached agreements and contracts</p>
+                    <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('documentsAdmin.attachedDocuments')}</h2>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('documentsAdmin.attachedDocumentsDesc')}</p>
                   </div>
                   <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
                     {filteredAgreements.length}
@@ -238,7 +233,7 @@ export default function DocumentsContent() {
                 {showAttached && (
                   filteredAgreements.length === 0 ? (
                     <div className="rounded-xl border border-dashed p-6 text-center" style={{ borderColor: 'var(--border)' }}>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No attached documents</p>
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('documentsAdmin.noAttachedDocuments')}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -260,7 +255,7 @@ export default function DocumentsContent() {
                             {a.fileUrl && (
                               <a href={a.fileUrl} target="_blank" rel="noopener"
                                 className="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors"
-                                style={{ color: 'var(--text-muted)' }} title="Open file">
+                                style={{ color: 'var(--text-muted)' }} title={t('documentsAdmin.openFile')}>
                                 <ExternalLink size={15} />
                               </a>
                             )}
@@ -286,8 +281,8 @@ export default function DocumentsContent() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Delete Document"
-        message={`Delete "${deleteTarget?.title}"?`}
+        title={t('documentsAdmin.deleteDocument')}
+        message={t('documentsAdmin.deleteDocumentConfirm', { title: deleteTarget?.title ?? '' })}
       />
     </>
   );

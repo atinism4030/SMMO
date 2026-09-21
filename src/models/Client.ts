@@ -1,5 +1,28 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface IClientBillingDoc {
+  monthlyFeeMinor: number;
+  currency: string;
+  billingStartDate?: Date;
+  billingDay: number;
+  paymentTerms?: string;
+  billingEnabled: boolean;
+  notes?: string;
+}
+
+const ClientBillingSchema = new Schema<IClientBillingDoc>(
+  {
+    monthlyFeeMinor: { type: Number, default: 0, min: 0 },
+    currency: { type: String, default: 'EUR' },
+    billingStartDate: { type: Date },
+    billingDay: { type: Number, default: 1, min: 1, max: 28 },
+    paymentTerms: { type: String },
+    billingEnabled: { type: Boolean, default: false },
+    notes: { type: String },
+  },
+  { _id: false }
+);
+
 export interface IClientDoc extends Document {
   name: string;
   businessType?: string;
@@ -21,6 +44,7 @@ export interface IClientDoc extends Document {
   logoUrl?: string;
   driveFolderUrl?: string;
   isDemo: boolean;
+  billing?: IClientBillingDoc;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +71,7 @@ const ClientSchema = new Schema<IClientDoc>(
     logoUrl: { type: String },
     driveFolderUrl: { type: String },
     isDemo: { type: Boolean, default: false },
+    billing: { type: ClientBillingSchema },
   },
   { timestamps: true }
 );

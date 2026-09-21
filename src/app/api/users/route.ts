@@ -26,11 +26,16 @@ export async function POST(request: NextRequest) {
 
   await connectDB();
 
-  const { name, email, password, phone, status } = await request.json();
+  const { name, email, password, phone, status, role } = await request.json();
 
   if (!name?.trim() || !email?.trim() || !password) {
     return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
   }
+
+  // Only an existing CEO can create another CEO / Co-Founder account (this
+  // handler already requires session.role === 'CEO' above) — WORKER remains
+  // the default so existing "add worker" callers are unaffected.
+  const newRole = role === 'CEO' ? 'CEO' : 'WORKER';
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email.trim())) {
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
     name: name.trim(),
     email: email.toLowerCase().trim(),
     passwordHash,
-    role: 'WORKER',
+    role: newRole,
     phone: phone?.trim() || undefined,
     status: status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
   });
