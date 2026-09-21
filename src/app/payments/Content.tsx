@@ -280,84 +280,101 @@ export default function PaymentsContent() {
         actions={<Button onClick={() => openNewPayment()}><Plus size={14} />{t('paymentsAdmin.newPayment')}</Button>}
       />
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard label={t('paymentsAdmin.statMonthlyExpected')} value={formatMoney(summary?.monthlyExpectedRevenueMinor ?? 0)} icon={Wallet} />
-          <StatCard label={t('paymentsAdmin.statVerifiedThisMonth')} value={formatMoney(summary?.verifiedThisMonthMinor ?? 0)} icon={ShieldCheck} />
-          <StatCard label={t('paymentsAdmin.statPendingConfirmations')} value={formatMoney(summary?.pendingConfirmationMinor ?? 0)} icon={Clock} subtitle={t('paymentsAdmin.paymentCount', { count: summary?.pendingConfirmationCount ?? 0, plural: summary?.pendingConfirmationCount === 1 ? '' : 's' })} />
-          <StatCard label={t('paymentsAdmin.statOutstandingBalance')} value={formatMoney(summary?.outstandingBalanceMinor ?? 0)} icon={AlertCircle} />
-          <StatCard label={t('paymentsAdmin.statOverdueClients')} value={summary?.overdueClientCount ?? 0} icon={Users2} />
-          <StatCard label={t('paymentsAdmin.statDisputedPayments')} value={summary?.disputedCount ?? 0} icon={MessageCircleWarning} />
+        {/* Tabs */}
+        <div className="flex gap-0 border-b" style={{ borderColor: 'var(--border)' }}>
+          {(['all', 'smm'] as const).map((key) => (
+            <button key={key} onClick={() => setTab(key)}
+              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+              style={{ borderColor: tab === key ? '#ffffff' : 'transparent', color: tab === key ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+              {key === 'all' ? t('paymentsAdmin.tabAllPayments') : t('paymentsAdmin.tabSocialMediaManagement')}
+            </button>
+          ))}
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)} placeholder={t('paymentsAdmin.searchByClient')}
-              className="pl-8 pr-3 py-2 rounded-lg text-sm border w-56"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-            />
-          </div>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-2 rounded-lg text-sm border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <option value="">{t('paymentsAdmin.allStatuses')}</option>
-            <option value="PENDING_CONFIRMATION">{t('payments.pendingConfirmation')}</option>
-            <option value="VERIFIED">{t('payments.verified')}</option>
-            <option value="DISPUTED">{t('payments.disputed')}</option>
-            <option value="CANCELLED">{t('payments.cancelled')}</option>
-          </select>
-          <label className="flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <input type="checkbox" className="accent-white" checked={thisMonthOnly} onChange={e => setThisMonthOnly(e.target.checked)} />
-            {t('paymentsAdmin.thisMonthOnly')}
-          </label>
-        </div>
-
-        {loading ? <LoadingSpinner fullPage /> : filteredPayments.length === 0 ? (
-          <EmptyState title={t('paymentsAdmin.noPaymentsYet')} icon={Wallet}
-            description={t('paymentsAdmin.noPaymentsYetDesc')}
-            action={<Button onClick={() => openNewPayment()}><Plus size={14} />{t('paymentsAdmin.newPayment')}</Button>} />
+        {tab === 'smm' ? (
+          <SmmTrackerView />
         ) : (
-          <div className="rounded-xl border overflow-x-auto" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                  {[t('paymentsAdmin.colClient'), t('paymentsAdmin.colAmount'), t('paymentsAdmin.colPaymentDate'), t('paymentsAdmin.colMethod'), t('paymentsAdmin.colPeriods'), t('paymentsAdmin.colStatus'), t('paymentsAdmin.colCreatedBy'), ''].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                {filteredPayments.map(p => {
-                  const client = p.clientId as IClient;
-                  const createdBy = p.createdBy as { name?: string } | string;
-                  return (
-                    <tr key={p._id} className="hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openView(p)}>
-                      <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{client?.name}</td>
-                      <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatMoney(p.amountMinor, p.currency)}</td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(p.paymentDate)}</td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{PAYMENT_METHOD_LABELS[p.paymentMethod]}</td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{t('paymentsAdmin.monthCount', { count: p.allocations.length, plural: p.allocations.length === 1 ? '' : 's' })}</td>
-                      <td className="px-4 py-3"><VerificationStatusBadge status={p.verificationStatus} /></td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{typeof createdBy === 'string' ? '—' : createdBy?.name ?? '—'}</td>
-                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => copyLink(p._id)} title={t('paymentsAdmin.copyVerificationLink')} className="p-1.5 rounded" style={{ color: 'var(--text-muted)' }}><Link2 size={13} /></button>
-                          {p.verificationStatus === 'DISPUTED' && (
-                            <button onClick={() => { setResolveTarget(p); setResolveAction('RESENT'); }} className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">{t('paymentsAdmin.resolve')}</button>
-                          )}
-                          {p.verificationStatus !== 'CANCELLED' && (
-                            <button onClick={() => setCancelTarget(p)} title={t('paymentsAdmin.cancelPayment')} className="p-1.5 rounded text-red-400 hover:text-red-300"><Ban size={13} /></button>
-                          )}
-                        </div>
-                      </td>
+          <>
+            {/* Metrics */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <StatCard label={t('paymentsAdmin.statMonthlyExpected')} value={formatMoney(summary?.monthlyExpectedRevenueMinor ?? 0)} icon={Wallet} />
+              <StatCard label={t('paymentsAdmin.statVerifiedThisMonth')} value={formatMoney(summary?.verifiedThisMonthMinor ?? 0)} icon={ShieldCheck} />
+              <StatCard label={t('paymentsAdmin.statPendingConfirmations')} value={formatMoney(summary?.pendingConfirmationMinor ?? 0)} icon={Clock} subtitle={t('paymentsAdmin.paymentCount', { count: summary?.pendingConfirmationCount ?? 0, plural: summary?.pendingConfirmationCount === 1 ? '' : 's' })} />
+              <StatCard label={t('paymentsAdmin.statOutstandingBalance')} value={formatMoney(summary?.outstandingBalanceMinor ?? 0)} icon={AlertCircle} />
+              <StatCard label={t('paymentsAdmin.statOverdueClients')} value={summary?.overdueClientCount ?? 0} icon={Users2} />
+              <StatCard label={t('paymentsAdmin.statDisputedPayments')} value={summary?.disputedCount ?? 0} icon={MessageCircleWarning} />
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={search} onChange={e => setSearch(e.target.value)} placeholder={t('paymentsAdmin.searchByClient')}
+                  className="pl-8 pr-3 py-2 rounded-lg text-sm border w-56"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as StatusFilter)}
+                className="px-3 py-2 rounded-lg text-sm border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                <option value="">{t('paymentsAdmin.allStatuses')}</option>
+                <option value="PENDING_CONFIRMATION">{t('payments.pendingConfirmation')}</option>
+                <option value="VERIFIED">{t('payments.verified')}</option>
+                <option value="DISPUTED">{t('payments.disputed')}</option>
+                <option value="CANCELLED">{t('payments.cancelled')}</option>
+              </select>
+              <label className="flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                <input type="checkbox" className="accent-white" checked={thisMonthOnly} onChange={e => setThisMonthOnly(e.target.checked)} />
+                {t('paymentsAdmin.thisMonthOnly')}
+              </label>
+            </div>
+
+            {loading ? <LoadingSpinner fullPage /> : filteredPayments.length === 0 ? (
+              <EmptyState title={t('paymentsAdmin.noPaymentsYet')} icon={Wallet}
+                description={t('paymentsAdmin.noPaymentsYetDesc')}
+                action={<Button onClick={() => openNewPayment()}><Plus size={14} />{t('paymentsAdmin.newPayment')}</Button>} />
+            ) : (
+              <div className="rounded-xl border overflow-x-auto" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
+                      {[t('paymentsAdmin.colClient'), t('paymentsAdmin.colAmount'), t('paymentsAdmin.colPaymentDate'), t('paymentsAdmin.colMethod'), t('paymentsAdmin.colPeriods'), t('paymentsAdmin.colStatus'), t('paymentsAdmin.colCreatedBy'), ''].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                      ))}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filteredPayments.map(p => {
+                      const client = p.clientId as IClient;
+                      const createdBy = p.createdBy as { name?: string } | string;
+                      return (
+                        <tr key={p._id} className="hover:bg-zinc-900 transition-colors cursor-pointer" onClick={() => openView(p)}>
+                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{client?.name}</td>
+                          <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatMoney(p.amountMinor, p.currency)}</td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(p.paymentDate)}</td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{PAYMENT_METHOD_LABELS[p.paymentMethod]}</td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{t('paymentsAdmin.monthCount', { count: p.allocations.length, plural: p.allocations.length === 1 ? '' : 's' })}</td>
+                          <td className="px-4 py-3"><VerificationStatusBadge status={p.verificationStatus} /></td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{typeof createdBy === 'string' ? '—' : createdBy?.name ?? '—'}</td>
+                          <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => copyLink(p._id)} title={t('paymentsAdmin.copyVerificationLink')} className="p-1.5 rounded" style={{ color: 'var(--text-muted)' }}><Link2 size={13} /></button>
+                              {p.verificationStatus === 'DISPUTED' && (
+                                <button onClick={() => { setResolveTarget(p); setResolveAction('RESENT'); }} className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">{t('paymentsAdmin.resolve')}</button>
+                              )}
+                              {p.verificationStatus !== 'CANCELLED' && (
+                                <button onClick={() => setCancelTarget(p)} title={t('paymentsAdmin.cancelPayment')} className="p-1.5 rounded text-red-400 hover:text-red-300"><Ban size={13} /></button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 

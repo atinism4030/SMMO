@@ -669,6 +669,10 @@ export interface RecordManualPaymentInput {
   billingPeriodId: string;
   amountMinor: number;
   createdBy: string;
+  /** Defaults to now; pass the real-world payment date when backfilling historical payments. */
+  paymentDate?: Date;
+  /** Appended to the standard note — used by the migration script to cite the original Finance transaction. */
+  noteSuffix?: string;
 }
 
 /** Marks one billing period as paid directly, bypassing client confirmation and Finance entirely. */
@@ -686,9 +690,10 @@ export async function recordManualPayment(input: RecordManualPaymentInput): Prom
     clientId: client._id,
     amountMinor: input.amountMinor,
     currency: period.currency,
-    paymentDate: new Date(),
+    paymentDate: input.paymentDate ?? new Date(),
     paymentMethod: 'OTHER',
-    notes: 'Marked paid manually via the Social Media Management tracker',
+    notes: 'Marked paid manually via the Social Media Management tracker'
+      + (input.noteSuffix ? ` — ${input.noteSuffix}` : ''),
     allocations: [{ billingPeriodId: period._id, amountMinor: input.amountMinor }],
     creditAmountMinor: 0,
     verificationStatus: 'VERIFIED',
